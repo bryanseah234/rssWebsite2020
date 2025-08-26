@@ -7,6 +7,3 @@ code to create a website that fetches update from rss feeds.
 
 ## Disclaimer:
 1. NONE
-
-## Demo:
-https://rss-website.glitch.me/
