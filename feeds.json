@@ -1,0 +1,139 @@
+{
+  "sections": [
+    {
+      "title": "NEWS UPDATES",
+      "feeds": [
+        {
+          "name": "Channel News Asia",
+          "url": "https://www.channelnewsasia.com/rssfeeds/8395986",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "Southern China Morning Post",
+          "url": "https://www.scmp.com/rss/91/feed",
+          "size": "half",
+          "container": "container2"
+        },
+        {
+          "name": "Mothership",
+          "url": "https://mothership.sg/feed/",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "Today Online",
+          "url": "https://www.todayonline.com/hot-news/feed",
+          "size": "half",
+          "container": "container2"
+        },
+        {
+          "name": "The Atlantic",
+          "url": "https://politepol.com/fd/s0oDjbTHXtZE",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "CNN",
+          "url": "http://rss.cnn.com/rss/edition.rss",
+          "size": "half",
+          "container": "container2"
+        },
+        {
+          "name": "BBC",
+          "url": "http://feeds.bbci.co.uk/news/world/rss.xml",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "WIRED",
+          "url": "https://politepol.com/fd/28zLEW8U4bd6",
+          "size": "half",
+          "container": "container2"
+        },
+        {
+          "name": "VOX",
+          "url": "https://www.vox.com/rss/world/index.xml",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "Washington Post",
+          "url": "http://feeds.washingtonpost.com/rss/world",
+          "size": "half",
+          "container": "container2"
+        },
+        {
+          "name": "XDA Developers",
+          "url": "https://politepol.com/fd/hEZ7QIfZfNcw",
+          "size": "full",
+          "container": "container3"
+        },
+        {
+          "name": "MacRumors",
+          "url": "http://feeds.macrumors.com/MacRumors-Front",
+          "size": "full",
+          "container": "container3"
+        },
+        {
+          "name": "Engadget",
+          "url": "https://www.engadget.com/rss.xml",
+          "size": "full",
+          "container": "container3"
+        },
+        {
+          "name": "9to5Mac",
+          "url": "https://9to5mac.com/feed/",
+          "size": "full",
+          "container": "container3"
+        },
+        {
+          "name": "Apple Insider",
+          "url": "https://appleinsider.com/rss/news",
+          "size": "full",
+          "container": "container3"
+        }
+      ]
+    },
+    {
+      "title": "HUMOUR UPDATES",
+      "feeds": [
+        {
+          "name": "Bored Panda",
+          "url": "https://politepol.com/fd/gId0qd6gWNpd",
+          "size": "full",
+          "container": "container3"
+        }
+      ]
+    },
+    {
+      "title": "YOUTUBE UPDATES",
+      "feeds": [
+        {
+          "name": "EverythingApplePro",
+          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCj34AOIMl_k1fF7hcBkD_dw",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "Brandon Butch",
+          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCpZy-Hfqcxf-R7nQzlv9Bvw",
+          "size": "half",
+          "container": "container2"
+        },
+        {
+          "name": "Later Clips",
+          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCtVGGeUqfVHOK4Q6nAwYO3g",
+          "size": "half",
+          "container": "container1"
+        },
+        {
+          "name": "Late Late Show with James Corden",
+          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJ0uqCI0Vqr2Rrt1HseGirg",
+          "size": "half",
+          "container": "container2"
+        }
+      ]
+    }
+  ]
+}
