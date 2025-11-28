@@ -4,9 +4,11 @@ from urllib.parse import quote
 
 app = Flask(__name__, template_folder='templates')
 
+
 def load_feeds():
     with open('feeds.json', 'r') as f:
         return json.load(f)
+
 
 def build_rssdog_url(feed_url):
     """Generate RSSdog iframe URL with standard parameters"""
@@ -21,6 +23,7 @@ def build_rssdog_url(feed_url):
     )
     return base + params
 
+
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -28,6 +31,7 @@ def add_header(response):
     response.headers["Expires"] = "0"
     response.cache_control.max_age = 0
     return response
+
 
 @app.route('/', methods=['GET', 'POST'])
 def root():
