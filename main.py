@@ -13,16 +13,12 @@ app = Flask(__name__, template_folder='templates')
 
 
 @app.after_request
-def add_header(r):
-    """
-    Add headers to both force latest IE rendering engine or Chrome Frame,
-    and also to cache the rendered page for 10 minutes.
-    """
-    r.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    r.headers["Pragma"] = "no-cache"
-    r.headers["Expires"] = "0"
-    r.headers['Cache-Control'] = 'public, max-age=0'
-    return r
+def add_header(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    response.cache_control.max_age = 0
+    return response
 
 
 @app.after_request
@@ -34,7 +30,3 @@ def add_header(response):
 @app.route('/', methods=['POST', 'GET'])
 def root():
     return render_template('index.html')
-
-
-if __name__ == '__main__':
-    app.run(debug=False, threaded=True, use_reloader=True)
