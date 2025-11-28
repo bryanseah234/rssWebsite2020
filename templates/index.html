@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>rssWebsite</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
@@ -20,7 +22,8 @@
                             width="{{ '1200' if feed.size == 'full' else '550' }}" 
                             height="600" 
                             class="{{ 'rssdog' if feed.size == 'full' else 'center' }}"
-                            src="{{ build_url(feed.url) }}">
+                            src="{{ build_url(feed.url) }}"
+                            loading="lazy">
                         </iframe>
                     </div>
                 {% endfor %}
