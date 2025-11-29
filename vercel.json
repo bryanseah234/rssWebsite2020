@@ -8,8 +8,17 @@
   ],
   "routes": [
     {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
       "src": "/(.*)",
       "dest": "main.py"
     }
-  ]
+  ],
+  "functions": {
+    "main.py": {
+      "maxDuration": 30
+    }
+  }
 }
