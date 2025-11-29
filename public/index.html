@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A dark-themed, mobile-responsive RSS reader">
+  <title>RSS Reader</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📰</text></svg>">
+</head>
+<body>
+  <header class="header">
+    <div class="header-content">
+      <div class="header-top">
+        <div class="logo">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 11a9 9 0 0 1 9 9"></path>
+            <path d="M4 4a16 16 0 0 1 16 16"></path>
+            <circle cx="5" cy="19" r="1"></circle>
+          </svg>
+          <h1>RSS Reader</h1>
+        </div>
+        <div class="header-stats">
+          <span id="feed-count">Loading feeds...</span>
+        </div>
+      </div>
+      <div class="search-container">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        <input 
+          type="text" 
+          class="search-input" 
+          id="search-input" 
+          placeholder="Search feeds and articles..." 
+          autocomplete="off"
+        >
+      </div>
+    </div>
+  </header>
+
+  <main class="main-container">
+    <section id="blogs-section">
+      <div class="section-header">
+        <h2>Blogs</h2>
+        <span class="section-badge" id="blogs-count">0</span>
+      </div>
+      <div class="feed-grid" id="blogs-grid"></div>
+    </section>
+
+    <section id="security-section">
+      <div class="section-header">
+        <h2>Security & Tech News</h2>
+        <span class="section-badge" id="security-count">0</span>
+      </div>
+      <div class="feed-grid" id="security-grid"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p>RSS Reader &copy; <span id="year"></span> | Powered by Vercel</p>
+  </footer>
+
+  <script src="/feeds.js"></script>
+  <script>
+    // Constants
+    const CONCURRENCY_LIMIT = 6;
+    const API_ENDPOINT = '/api/rss';
+
+    // State
+    let allFeedCards = [];
+    let loadedFeeds = 0;
+    let totalFeeds = 0;
+
+    /**
+     * Format date to relative time
+     * @param {string} dateStr - ISO date string
+     * @returns {string} - Relative time string
+     */
+    function formatRelativeTime(dateStr) {
+      if (!dateStr) return '';
+      try {
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return dateStr;
+        
+        const now = new Date();
+        const diffMs = now - date;
+        const diffSecs = Math.floor(diffMs / 1000);
+        const diffMins = Math.floor(diffSecs / 60);
+        const diffHours = Math.floor(diffMins / 60);
+        const diffDays = Math.floor(diffHours / 24);
+        const diffWeeks = Math.floor(diffDays / 7);
+        
+        if (diffSecs < 60) return 'just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffWeeks < 4) return `${diffWeeks}w ago`;
+        
+        return date.toLocaleDateString();
+      } catch {
+        return dateStr;
+      }
+    }
+
+    /**
+     * Truncate text to max length
+     * @param {string} text - Input text
+     * @param {number} maxLength - Maximum length
+     * @returns {string} - Truncated text
+     */
+    function truncateText(text, maxLength = 150) {
+      if (!text || text.length <= maxLength) return text;
+      return text.slice(0, maxLength).trim() + '...';
+    }
+
+    /**
+     * Create a feed card element
+     * @param {string} name - Feed name
+     * @param {string} category - Feed category
+     * @returns {HTMLElement} - Feed card element
+     */
+    function createFeedCard(name, category) {
+      const card = document.createElement('div');
+      card.className = 'feed-card loading';
+      card.dataset.name = name.toLowerCase();
+      card.dataset.category = category;
+      card.innerHTML = `
+        <div class="feed-card-header">
+          <span class="feed-card-title">${escapeHtml(name)}</span>
+          <span class="feed-card-count">...</span>
+        </div>
+        <ul class="feed-items">
+          <li class="loading-skeleton">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+          </li>
+        </ul>
+      `;
+      return card;
+    }
+
+    /**
+     * Escape HTML to prevent XSS
+     * @param {string} text - Input text
+     * @returns {string} - Escaped text
+     */
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    /**
+     * Update feed card with data
+     * @param {HTMLElement} card - Feed card element
+     * @param {object} data - Feed data
+     */
+    function updateFeedCard(card, data) {
+      card.classList.remove('loading');
+      
+      const countEl = card.querySelector('.feed-card-count');
+      const itemsEl = card.querySelector('.feed-items');
+      
+      countEl.textContent = `${data.items.length} items`;
+      
+      if (data.items.length === 0) {
+        itemsEl.innerHTML = '<li class="error-message">No items available</li>';
+        return;
+      }
+      
+      itemsEl.innerHTML = data.items.map(item => `
+        <li class="feed-item">
+          <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
+            <div class="feed-item-title">${escapeHtml(item.title)}</div>
+            ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+            <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+          </a>
+        </li>
+      `).join('');
+      
+      // Store items for search
+      card.dataset.items = JSON.stringify(data.items.map(i => 
+        `${i.title} ${i.text}`.toLowerCase()
+      ));
+    }
+
+    /**
+     * Show error state on feed card
+     * @param {HTMLElement} card - Feed card element
+     * @param {string} error - Error message
+     */
+    function showFeedError(card, error) {
+      card.classList.remove('loading');
+      card.classList.add('error');
+      
+      const countEl = card.querySelector('.feed-card-count');
+      const itemsEl = card.querySelector('.feed-items');
+      
+      countEl.textContent = 'Error';
+      itemsEl.innerHTML = '<li class="error-message">Failed to load feed</li>';
+      
+      console.error(`[Feed Error] ${card.dataset.name}:`, error);
+    }
+
+    /**
+     * Fetch a single feed
+     * @param {object} feed - Feed configuration
+     * @param {HTMLElement} card - Feed card element
+     */
+    async function fetchFeed(feed, card) {
+      try {
+        const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=${feed.limit}`;
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        updateFeedCard(card, data);
+      } catch (error) {
+        showFeedError(card, error.message);
+      } finally {
+        loadedFeeds++;
+        updateFeedCount();
+      }
+    }
+
+    /**
+     * Fetch feeds with concurrency limit
+     * @param {Array} feedConfigs - Array of {feed, card} objects
+     * @param {number} limit - Concurrency limit
+     */
+    async function fetchFeedsWithConcurrency(feedConfigs, limit) {
+      const queue = [...feedConfigs];
+      const executing = [];
+      
+      while (queue.length > 0 || executing.length > 0) {
+        while (executing.length < limit && queue.length > 0) {
+          const { feed, card } = queue.shift();
+          const promise = fetchFeed(feed, card).then(() => {
+            executing.splice(executing.indexOf(promise), 1);
+          });
+          executing.push(promise);
+        }
+        
+        if (executing.length > 0) {
+          await Promise.race(executing);
+        }
+      }
+    }
+
+    /**
+     * Update the feed count display
+     */
+    function updateFeedCount() {
+      const countEl = document.getElementById('feed-count');
+      if (loadedFeeds < totalFeeds) {
+        countEl.textContent = `Loading ${loadedFeeds}/${totalFeeds} feeds...`;
+      } else {
+        countEl.textContent = `${totalFeeds} feeds loaded`;
+      }
+    }
+
+    /**
+     * Filter feeds based on search query
+     * @param {string} query - Search query
+     */
+    function filterFeeds(query) {
+      const lowerQuery = query.toLowerCase().trim();
+      
+      allFeedCards.forEach(card => {
+        if (!lowerQuery) {
+          card.classList.remove('hidden');
+          return;
+        }
+        
+        const name = card.dataset.name || '';
+        const items = card.dataset.items ? JSON.parse(card.dataset.items) : [];
+        
+        const matchesName = name.includes(lowerQuery);
+        const matchesItems = items.some(item => item.includes(lowerQuery));
+        
+        if (matchesName || matchesItems) {
+          card.classList.remove('hidden');
+        } else {
+          card.classList.add('hidden');
+        }
+      });
+      
+      // Update section visibility
+      ['blogs', 'security'].forEach(section => {
+        const grid = document.getElementById(`${section}-grid`);
+        const visibleCards = grid.querySelectorAll('.feed-card:not(.hidden)');
+        const sectionEl = document.getElementById(`${section}-section`);
+        
+        if (visibleCards.length === 0 && lowerQuery) {
+          sectionEl.style.display = 'none';
+        } else {
+          sectionEl.style.display = 'block';
+        }
+        
+        // Update count badge
+        document.getElementById(`${section}-count`).textContent = visibleCards.length;
+      });
+    }
+
+    /**
+     * Initialize the app
+     */
+    async function init() {
+      // Set current year
+      document.getElementById('year').textContent = new Date().getFullYear();
+      
+      const blogsGrid = document.getElementById('blogs-grid');
+      const securityGrid = document.getElementById('security-grid');
+      
+      const feedConfigs = [];
+      
+      // Create cards for blogs
+      if (window.FEEDS?.blogs) {
+        document.getElementById('blogs-count').textContent = FEEDS.blogs.length;
+        FEEDS.blogs.forEach(feed => {
+          const card = createFeedCard(feed.name, 'blogs');
+          blogsGrid.appendChild(card);
+          allFeedCards.push(card);
+          feedConfigs.push({ feed, card });
+        });
+      }
+      
+      // Create cards for security feeds
+      if (window.FEEDS?.security) {
+        document.getElementById('security-count').textContent = FEEDS.security.length;
+        FEEDS.security.forEach(feed => {
+          const card = createFeedCard(feed.name, 'security');
+          securityGrid.appendChild(card);
+          allFeedCards.push(card);
+          feedConfigs.push({ feed, card });
+        });
+      }
+      
+      totalFeeds = feedConfigs.length;
+      updateFeedCount();
+      
+      // Set up search
+      const searchInput = document.getElementById('search-input');
+      let debounceTimer;
+      searchInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          filterFeeds(e.target.value);
+        }, 200);
+      });
+      
+      // Fetch all feeds with concurrency limit
+      await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
+      
+      console.log(`[RSS Reader] Loaded ${loadedFeeds} feeds`);
+    }
+
+    // Start the app
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
