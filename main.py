@@ -412,7 +412,8 @@ def root():
                     except Exception as e:
                         log(f"Error fetching r/{subreddit}: {e}")
             except TimeoutError:
-                log(f"Reddit fetching timed out after {PARALLEL_TIMEOUT} seconds")
+                log(
+                    f"Reddit fetching timed out after {PARALLEL_TIMEOUT} seconds")
                 # Cancel pending futures to prevent resource leaks
                 for future in future_to_subreddit:
                     future.cancel()
@@ -454,7 +455,8 @@ def root():
                             'error': True
                         })
             except TimeoutError:
-                log(f"YouTube fetching timed out after {PARALLEL_TIMEOUT} seconds")
+                log(
+                    f"YouTube fetching timed out after {PARALLEL_TIMEOUT} seconds")
                 # Cancel pending futures to prevent resource leaks
                 for future in future_to_channel:
                     future.cancel()
@@ -490,7 +492,8 @@ def root():
                             'error': True
                         })
             except TimeoutError:
-                log(f"Twitch fetching timed out after {PARALLEL_TIMEOUT} seconds")
+                log(
+                    f"Twitch fetching timed out after {PARALLEL_TIMEOUT} seconds")
                 # Cancel pending futures to prevent resource leaks
                 for future in future_to_channel:
                     future.cancel()
