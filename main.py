@@ -27,7 +27,8 @@ def log(message):
 
 # Security: Allowed schemes and blocked hosts for SSRF protection
 ALLOWED_SCHEMES = {'http', 'https'}
-BLOCKED_HOSTS = {'localhost', 'localhost.localdomain', '127.0.0.1', '0.0.0.0', '0', '169.254.169.254', '::1'}
+BLOCKED_HOSTS = {'localhost', 'localhost.localdomain',
+                 '127.0.0.1', '0.0.0.0', '0', '169.254.169.254', '::1'}
 
 
 def is_safe_url(url):
