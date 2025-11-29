@@ -10,6 +10,13 @@ app = Flask(__name__, template_folder='templates')
 # Enable debug logging
 app.config['DEBUG'] = True
 
+# Parallel fetching configuration
+PARALLEL_TIMEOUT = 8  # Overall timeout for parallel operations in seconds
+RSS_MAX_WORKERS = 15  # Max concurrent RSS feed fetches
+REDDIT_MAX_WORKERS = 6  # Max concurrent Reddit fetches
+YOUTUBE_MAX_WORKERS = 6  # Max concurrent YouTube fetches
+TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
+
 
 def log(message):
     """Helper function for logging"""
@@ -313,7 +320,7 @@ def root():
         log(f"Total feeds to fetch: {len(all_feeds)}")
 
         # Fetch all RSS feeds in parallel
-        with ThreadPoolExecutor(max_workers=15) as executor:
+        with ThreadPoolExecutor(max_workers=RSS_MAX_WORKERS) as executor:
             future_to_feed = {
                 executor.submit(
                     fetch_rss_feed,
@@ -322,7 +329,7 @@ def root():
                 ): f for f in all_feeds
             }
 
-            for future in as_completed(future_to_feed, timeout=8):
+            for future in as_completed(future_to_feed, timeout=PARALLEL_TIMEOUT):
                 feed_info = future_to_feed[future]
                 try:
                     items = future.result()
@@ -340,13 +347,13 @@ def root():
         subreddits = config.get('subreddits', [])
         log(f"Processing {len(subreddits)} subreddits")
 
-        with ThreadPoolExecutor(max_workers=6) as executor:
+        with ThreadPoolExecutor(max_workers=REDDIT_MAX_WORKERS) as executor:
             future_to_subreddit = {
                 executor.submit(fetch_reddit, sub, 5): sub
                 for sub in subreddits
             }
 
-            for future in as_completed(future_to_subreddit, timeout=8):
+            for future in as_completed(future_to_subreddit, timeout=PARALLEL_TIMEOUT):
                 subreddit = future_to_subreddit[future]
                 try:
                     posts = future.result()
@@ -365,7 +372,7 @@ def root():
         youtube_channels = config.get('youtube_channels', [])
         log(f"Processing {len(youtube_channels)} YouTube channels")
 
-        with ThreadPoolExecutor(max_workers=6) as executor:
+        with ThreadPoolExecutor(max_workers=YOUTUBE_MAX_WORKERS) as executor:
             future_to_channel = {
                 executor.submit(
                     fetch_youtube,
@@ -375,7 +382,7 @@ def root():
                 ): channel for channel in youtube_channels
             }
 
-            for future in as_completed(future_to_channel, timeout=8):
+            for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
                 channel = future_to_channel[future]
                 try:
                     videos = future.result()
@@ -401,13 +408,13 @@ def root():
         twitch_channels = config.get('twitch_channels', [])
         log(f"Processing {len(twitch_channels)} Twitch channels")
 
-        with ThreadPoolExecutor(max_workers=5) as executor:
+        with ThreadPoolExecutor(max_workers=TWITCH_MAX_WORKERS) as executor:
             future_to_channel = {
                 executor.submit(fetch_twitch_status, channel): channel
                 for channel in twitch_channels
             }
 
-            for future in as_completed(future_to_channel, timeout=8):
+            for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
                 channel = future_to_channel[future]
                 try:
                     status = future.result()

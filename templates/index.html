@@ -233,6 +233,13 @@
                 }
             }
 
+            // HTML escape function to prevent XSS
+            function escapeHtml(text) {
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
             // Retry any failed feeds via client-side API
             document.querySelectorAll('.widget .empty-state.error').forEach(function(errorWidget) {
                 const widget = errorWidget.closest('.widget');
@@ -247,18 +254,32 @@
                     .then(function(res) { return res.json(); })
                     .then(function(data) {
                         if (data.items && data.items.length > 0) {
-                            // Update widget with fetched data
+                            // Update widget with fetched data using safe DOM manipulation
                             var list = document.createElement('ul');
                             list.className = 'feed-list';
                             data.items.forEach(function(item) {
                                 var li = document.createElement('li');
                                 li.className = 'feed-item';
+                                
+                                var a = document.createElement('a');
+                                a.href = item.link;
+                                a.target = '_blank';
+                                a.rel = 'noopener';
+                                
+                                var titleDiv = document.createElement('div');
+                                titleDiv.className = 'feed-title';
+                                titleDiv.textContent = item.title;
+                                a.appendChild(titleDiv);
+                                
                                 var timeAgo = item.pubDate ? formatTimeAgo(item.pubDate) : '';
-                                li.innerHTML = 
-                                    '<a href="' + item.link + '" target="_blank" rel="noopener">' +
-                                        '<div class="feed-title">' + item.title + '</div>' +
-                                        (timeAgo ? '<div class="feed-time">' + timeAgo + '</div>' : '') +
-                                    '</a>';
+                                if (timeAgo) {
+                                    var timeDiv = document.createElement('div');
+                                    timeDiv.className = 'feed-time';
+                                    timeDiv.textContent = timeAgo;
+                                    a.appendChild(timeDiv);
+                                }
+                                
+                                li.appendChild(a);
                                 list.appendChild(li);
                             });
                             var widgetContent = widget.querySelector('.widget-content');
@@ -267,7 +288,9 @@
                             // Add footer
                             var footer = document.createElement('div');
                             footer.className = 'widget-footer';
-                            footer.innerHTML = '<small>Loaded ' + data.items.length + ' items (client-side)</small>';
+                            var small = document.createElement('small');
+                            small.textContent = 'Loaded ' + data.items.length + ' items (client-side)';
+                            footer.appendChild(small);
                             widgetContent.appendChild(footer);
                         } else {
                             // No items, show error
@@ -276,8 +299,11 @@
                     })
                     .catch(function(err) {
                         console.error('Client-side fetch failed for', feedUrl, err);
-                        // Keep showing error state
-                        errorWidget.innerHTML = '<span class="status-icon">❌</span><p>Failed to load feed</p><small>' + feedUrl + '</small>';
+                        // Keep showing error state using safe DOM manipulation
+                        errorWidget.innerHTML = '<span class="status-icon">❌</span><p>Failed to load feed</p>';
+                        var small = document.createElement('small');
+                        small.textContent = feedUrl;
+                        errorWidget.appendChild(small);
                     });
             });
         </script>
