@@ -393,7 +393,8 @@ def root():
                     future.cancel()
                     # Ensure items is set even for timed-out feeds
                     if 'items' not in sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]:
-                        sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]['items'] = []
+                        sections[feed_info['section_idx']
+                                 ]['feeds'][feed_info['feed_idx']]['items'] = []
 
         log(f"Processed {len(all_feeds)} feeds total")
 
