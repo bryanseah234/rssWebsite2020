@@ -19,7 +19,9 @@
         {"name": "MrBruh", "url": "https://mrbruh.com/index.xml", "limit": 3},
         {"name": "Hillel Wayne", "url": "https://www.hillelwayne.com/index.xml", "limit": 3},
         {"name": "Bounded Rationality", "url": "https://bjlkeng.io//rss.xml", "limit": 3},
-        {"name": "On my Om", "url": "https://om.co/feed/", "limit": 3}
+        {"name": "On my Om", "url": "https://om.co/feed/", "limit": 3},
+        {"name": "Brian Lovin", "url": "https://brianlovin.com/writing/rss.xml", "limit": 3},
+        {"name": "David Lim", "url": "https://davidlhw.dev/rss.xml", "limit": 3}
       ]
     },
     {
