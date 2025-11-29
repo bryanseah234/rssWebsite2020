@@ -2,7 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
 :root {
-    /* Glance-inspired theme colors (HSL format) */
+    /* Glance color scheme */
     --bg-hue: 231;
     --bg-sat: 15%;
     --bg-light: 12%;
@@ -11,22 +11,15 @@
     --primary-sat: 89%;
     --primary-light: 79%;
     
-    --positive-hue: 135;
-    --positive-sat: 94%;
-    --positive-light: 66%;
-    
-    --negative-hue: 0;
-    --negative-sat: 100%;
-    --negative-light: 67%;
-    
-    /* Derived colors */
     --background: hsl(var(--bg-hue), var(--bg-sat), var(--bg-light));
     --surface: hsl(var(--bg-hue), var(--bg-sat), calc(var(--bg-light) + 4%));
     --surface-hover: hsl(var(--bg-hue), var(--bg-sat), calc(var(--bg-light) + 6%));
     --primary: hsl(var(--primary-hue), var(--primary-sat), var(--primary-light));
     --text-primary: hsl(0, 0%, 95%);
     --text-secondary: hsl(0, 0%, 70%);
+    --text-tertiary: hsl(0, 0%, 50%);
     --border: hsl(var(--bg-hue), var(--bg-sat), 20%);
+    --link-color: hsl(217, 92%, 76%);
 }
 
 * { 
@@ -35,15 +28,13 @@
     box-sizing: border-box;
 }
 
-html { 
+html, body { 
     width: 100%; 
-    height: 100%;
+    min-height: 100vh;
     scroll-behavior: smooth;
 }
 
 body {
-    min-height: 100vh;
-    margin: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     background: var(--background);
     color: var(--text-primary);
@@ -52,160 +43,199 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-.top {
-    height: 0;
-    display: none;
-}
-
-.header {
+/* Page Header */
+.page-header {
+    padding: 32px 20px 24px;
     text-align: center;
-    padding: 48px 20px 32px;
+    border-bottom: 1px solid var(--border);
 }
 
-.header h2 {
-    font-size: 18px;
+.page-header h1 {
+    font-size: 24px;
     font-weight: 600;
+    color: var(--text-primary);
     margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: var(--text-secondary);
-    position: relative;
+    letter-spacing: -0.5px;
 }
 
-.header h2::after {
-    content: '';
-    position: absolute;
-    bottom: -12px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 2px;
-    background: var(--primary);
-    border-radius: 2px;
-}
-
-#container {
-    width: 100%;
+/* Container */
+.container {
     max-width: 1600px;
     margin: 0 auto;
     padding: 20px;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0;
 }
 
-/* Widget containers - Glance-style cards */
-.container1, .container2, .container3 {
+/* Grid Layout - Masonry Style */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 16px;
+    align-items: start;
+}
+
+/* Widget Card */
+.widget {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: 8px;
-    margin-bottom: 20px;
     overflow: hidden;
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
-.container1:hover, .container2:hover, .container3:hover {
+.widget:hover {
     background: var(--surface-hover);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
-/* Two-column layout for desktop */
-@media (min-width: 1024px) {
-    #container {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-    }
-    
-    .container1, .container2 {
-        width: calc(50% - 10px);
-        margin-bottom: 0;
-    }
-    
-    .container3 {
-        width: 100%;
-        margin-bottom: 0;
-    }
+/* Widget Header */
+.widget-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
 }
 
-h3 {
-    font-size: 14px;
+.widget-header:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.widget-header h3 {
+    font-size: 13px;
     font-weight: 600;
     color: var(--text-primary);
-    padding: 16px 20px;
     margin: 0;
-    background: transparent;
-    border-bottom: 1px solid var(--border);
     letter-spacing: 0.3px;
 }
 
-iframe {
-    width: 100%;
-    height: 600px;
-    border: none;
-    background: #ffffff;
-    display: block;
+.widget-badge {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
 }
 
-.center, .rssdog {
-    display: block;
+/* Widget Content */
+.widget-content {
+    padding: 0;
 }
 
-.footer {
-    height: 60px;
+/* Feed List */
+.feed-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.feed-item {
+    border-bottom: 1px solid var(--border);
+}
+
+.feed-item:last-child {
+    border-bottom: none;
+}
+
+.feed-item a {
+    display: block;
+    padding: 12px 16px;
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: background 0.15s ease;
+}
+
+.feed-item a:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.feed-title {
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.feed-time {
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.feed-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+}
+
+.upvotes, .comments {
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: var(--text-secondary);
-    font-size: 12px;
-    margin-top: 40px;
+    gap: 4px;
 }
 
-/* Mobile responsive */
+/* Empty State */
+.empty-state {
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 12px;
+}
+
+/* Collapsed State */
+.widget.collapsed .widget-content {
+    display: none;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .grid {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 14px;
+    }
+}
+
 @media (max-width: 768px) {
-    .header {
-        padding: 32px 16px 24px;
+    .container {
+        padding: 12px;
     }
     
-    .header h2 {
-        font-size: 16px;
-        letter-spacing: 1.5px;
+    .grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
     }
     
-    #container {
-        padding: 16px;
+    .page-header {
+        padding: 24px 16px 20px;
     }
     
-    h3 {
-        font-size: 13px;
-        padding: 14px 16px;
-    }
-    
-    iframe {
-        height: 500px;
+    .page-header h1 {
+        font-size: 20px;
     }
 }
 
 @media (max-width: 480px) {
-    .header h2 {
-        font-size: 14px;
+    .page-header h1 {
+        font-size: 18px;
     }
     
-    #container {
-        padding: 12px;
+    .widget-header {
+        padding: 12px 14px;
     }
     
-    .container1, .container2, .container3 {
-        margin-bottom: 16px;
-    }
-    
-    iframe {
-        height: 450px;
+    .feed-item a {
+        padding: 10px 14px;
     }
 }
 
-/* Custom scrollbar - Glance style */
+/* Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -224,7 +254,7 @@ iframe {
     background: hsl(var(--bg-hue), var(--bg-sat), 30%);
 }
 
-/* Loading states */
+/* Loading Animation */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -236,32 +266,21 @@ iframe {
     }
 }
 
-.container1, .container2, .container3 {
+.widget {
     animation: fadeIn 0.3s ease-out;
 }
 
-/* Theme variations - uncomment to use */
-
-/* Darker theme */
-/*
-:root {
-    --bg-hue: 240;
-    --bg-sat: 21%;
-    --bg-light: 8%;
-    --primary-hue: 217;
-    --primary-sat: 92%;
-    --primary-light: 83%;
+/* Focus States */
+.feed-item a:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
 }
-*/
 
-/* Warmer theme */
-/*
-:root {
-    --bg-hue: 24;
-    --bg-sat: 15%;
-    --bg-light: 12%;
-    --primary-hue: 24;
-    --primary-sat: 97%;
-    --primary-light: 58%;
+/* Link Styling */
+a {
+    color: var(--link-color);
 }
-*/
+
+a:hover {
+    text-decoration: underline;
+}
