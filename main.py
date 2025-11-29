@@ -354,6 +354,8 @@ def root():
         for section_idx, section in enumerate(sections):
             feeds = section.get('feeds', [])
             for feed_idx, feed in enumerate(feeds):
+                # Initialize items to empty list to prevent template errors
+                feed['items'] = []
                 all_feeds.append({
                     'section_idx': section_idx,
                     'feed_idx': feed_idx,
@@ -386,9 +388,13 @@ def root():
             except TimeoutError:
                 log(
                     f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
-                # Cancel pending futures to prevent resource leaks
-                for future in future_to_feed:
+                # Cancel pending futures and ensure items is set for timed-out feeds
+                for future, feed_info in future_to_feed.items():
                     future.cancel()
+                    # Ensure items is set even for timed-out feeds
+                    if 'items' not in sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]:
+                        sections[feed_info['section_idx']
+                                 ]['feeds'][feed_info['feed_idx']]['items'] = []
 
         log(f"Processed {len(all_feeds)} feeds total")
 
