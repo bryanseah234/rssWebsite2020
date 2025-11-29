@@ -33,10 +33,10 @@
                                 <span class="widget-badge">{{ section.title }}</span>
                             </div>
                             <div class="widget-content">
-                                {% if feed.items %}
-                                    {% if feed.items|length > 0 %}
+                                {% if feed['items'] %}
+                                    {% if feed['items']|length > 0 %}
                                         <ul class="feed-list">
-                                            {% for item in feed.items %}
+                                            {% for item in feed['items'] %}
                                                 <li class="feed-item">
                                                     <a href="{{ item.link }}" target="_blank" rel="noopener">
                                                         <div class="feed-title">{{ item.title }}</div>
@@ -48,7 +48,7 @@
                                             {% endfor %}
                                         </ul>
                                         <div class="widget-footer">
-                                            <small>Loaded {{ feed.items|length }} items</small>
+                                            <small>Loaded {{ feed['items']|length }} items</small>
                                         </div>
                                     {% else %}
                                         <div class="empty-state">
