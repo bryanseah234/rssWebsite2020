@@ -329,16 +329,19 @@ def root():
                 ): f for f in all_feeds
             }
 
-            for future in as_completed(future_to_feed, timeout=PARALLEL_TIMEOUT):
-                feed_info = future_to_feed[future]
-                try:
-                    items = future.result()
-                    sections[feed_info['section_idx']
-                             ]['feeds'][feed_info['feed_idx']]['items'] = items
-                except Exception as e:
-                    log(f"Error fetching {feed_info['feed']['url']}: {e}")
-                    sections[feed_info['section_idx']
-                             ]['feeds'][feed_info['feed_idx']]['items'] = []
+            try:
+                for future in as_completed(future_to_feed, timeout=PARALLEL_TIMEOUT):
+                    feed_info = future_to_feed[future]
+                    try:
+                        items = future.result()
+                        sections[feed_info['section_idx']
+                                 ]['feeds'][feed_info['feed_idx']]['items'] = items
+                    except Exception as e:
+                        log(f"Error fetching {feed_info['feed']['url']}: {e}")
+                        sections[feed_info['section_idx']
+                                 ]['feeds'][feed_info['feed_idx']]['items'] = []
+            except TimeoutError:
+                log(f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
 
         log(f"Processed {len(all_feeds)} feeds total")
 
