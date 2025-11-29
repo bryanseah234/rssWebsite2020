@@ -241,11 +241,12 @@ def fetch_twitch_status(channel_name):
         
         stream = user_data.get('stream')
         if stream:
+            game = stream.get('game', {}) or {}
             return {
                 'name': user_data.get('login', channel_name),
                 'display_name': user_data.get('displayName', channel_name),
                 'is_live': True,
-                'game': stream.get('game', {}).get('name', '') if stream.get('game') else '',
+                'game': game.get('name', ''),
                 'viewers': stream.get('viewersCount', 0),
                 'title': stream.get('title', '')[:100]
             }
@@ -336,12 +337,12 @@ def root():
                 channel.get('name'),
                 channel.get('limit', 3)
             )
-            if videos:
-                youtube_data.append({
-                    'name': channel.get('name'),
-                    'category': channel.get('category', 'General'),
-                    'videos': videos
-                })
+            youtube_data.append({
+                'name': channel.get('name'),
+                'category': channel.get('category', 'General'),
+                'videos': videos,
+                'error': len(videos) == 0
+            })
         
         log(f"Fetched data from {len(youtube_data)} YouTube channels")
         
