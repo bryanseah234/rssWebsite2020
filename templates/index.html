@@ -10,12 +10,12 @@
         <div class="page-header">
             <h1>Prawn Dashboard</h1>
             <div class="debug-info">
-                <small>Sections: {{ config.sections|length }} | Subreddits: {{ config.subreddits|length }}</small>
+                <small>Sections: {{ config.sections|length }} | Subreddits: {{ config.subreddits|length }} | YouTube: {{ youtube_data|length }} | Twitch: {{ twitch_data|length }}</small>
             </div>
         </div>
 
         <div class="container">
-            {% if config.sections|length == 0 and reddit_data|length == 0 %}
+            {% if config.sections|length == 0 and reddit_data|length == 0 and youtube_data|length == 0 and twitch_data|length == 0 %}
                 <div class="error-banner">
                     <h2>⚠️ No data loaded</h2>
                     <p>Configuration file may be missing or empty.</p>
@@ -24,6 +24,79 @@
             {% endif %}
 
             <div class="grid">
+                <!-- Twitch Status Section -->
+                {% if twitch_data|length > 0 %}
+                    <div class="widget twitch-widget" data-twitch="status">
+                        <div class="widget-header">
+                            <h3>Twitch Live Status</h3>
+                            <span class="widget-badge">Twitch</span>
+                        </div>
+                        <div class="widget-content">
+                            <ul class="feed-list">
+                                {% for streamer in twitch_data %}
+                                    <li class="feed-item twitch-item">
+                                        <a href="https://twitch.tv/{{ streamer.name }}" target="_blank" rel="noopener">
+                                            <div class="twitch-status-row">
+                                                <span class="twitch-name">{{ streamer.display_name }}</span>
+                                                {% if streamer.is_live %}
+                                                    <span class="twitch-live-badge">LIVE</span>
+                                                {% else %}
+                                                    <span class="twitch-offline-badge">OFFLINE</span>
+                                                {% endif %}
+                                            </div>
+                                            {% if streamer.is_live %}
+                                                <div class="twitch-details">
+                                                    {% if streamer.game %}
+                                                        <span class="twitch-game">🎮 {{ streamer.game }}</span>
+                                                    {% endif %}
+                                                    <span class="twitch-viewers">👁 {{ "{:,}".format(streamer.viewers) }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                            <div class="widget-footer">
+                                <small>{{ twitch_data|length }} channels</small>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- YouTube Sections -->
+                {% for youtube in youtube_data %}
+                    <div class="widget" data-youtube="{{ youtube.name }}">
+                        <div class="widget-header">
+                            <h3>{{ youtube.name }}</h3>
+                            <span class="widget-badge">YouTube / {{ youtube.category }}</span>
+                        </div>
+                        <div class="widget-content">
+                            {% if youtube.videos|length > 0 %}
+                                <ul class="feed-list">
+                                    {% for video in youtube.videos %}
+                                        <li class="feed-item">
+                                            <a href="{{ video.link }}" target="_blank" rel="noopener">
+                                                <div class="feed-title">{{ video.title }}</div>
+                                                {% if video.published %}
+                                                    <div class="feed-time">{{ video.published }}</div>
+                                                {% endif %}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="widget-footer">
+                                    <small>Loaded {{ youtube.videos|length }} videos</small>
+                                </div>
+                            {% else %}
+                                <div class="empty-state error">
+                                    <span class="status-icon">❌</span>
+                                    <p>Failed to load channel</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+
                 <!-- RSS Feed Sections -->
                 {% for section in config.sections %}
                     {% for feed in section.feeds %}
@@ -114,10 +187,12 @@
             console.log('Dashboard loaded');
             console.log('Sections:', {{ config.sections|length }});
             console.log('Reddit feeds:', {{ reddit_data|length }});
+            console.log('YouTube channels:', {{ youtube_data|length }});
+            console.log('Twitch channels:', {{ twitch_data|length }});
             
             // Log widget status
             document.querySelectorAll('.widget').forEach(widget => {
-                const name = widget.dataset.feed || widget.dataset.reddit;
+                const name = widget.dataset.feed || widget.dataset.reddit || widget.dataset.youtube || widget.dataset.twitch;
                 const items = widget.querySelectorAll('.feed-item').length;
                 const hasError = widget.querySelector('.empty-state.error');
                 console.log(`Widget "${name}": ${items} items, Error: ${!!hasError}`);

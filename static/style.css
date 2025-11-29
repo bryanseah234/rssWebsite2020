@@ -222,6 +222,65 @@ body {
     gap: 4px;
 }
 
+/* Twitch Status Styles */
+.twitch-widget {
+    border-left: 3px solid #9146FF;
+}
+
+.twitch-item a {
+    display: block;
+    padding: 12px 16px;
+}
+
+.twitch-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.twitch-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.twitch-live-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: #ff4444;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.twitch-offline-badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.twitch-details {
+    display: flex;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+}
+
+.twitch-game, .twitch-viewers {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 /* Empty State */
 .empty-state {
     padding: 24px 16px;
