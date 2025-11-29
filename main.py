@@ -326,10 +326,12 @@ def root():
                 feed_info = future_to_feed[future]
                 try:
                     items = future.result()
-                    sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]['items'] = items
+                    sections[feed_info['section_idx']
+                             ]['feeds'][feed_info['feed_idx']]['items'] = items
                 except Exception as e:
                     log(f"Error fetching {feed_info['feed']['url']}: {e}")
-                    sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]['items'] = []
+                    sections[feed_info['section_idx']
+                             ]['feeds'][feed_info['feed_idx']]['items'] = []
 
         log(f"Processed {len(all_feeds)} feeds total")
 
