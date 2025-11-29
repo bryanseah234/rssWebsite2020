@@ -134,6 +134,143 @@ def fetch_reddit(subreddit, limit=5):
         log(traceback.format_exc())
         return []
 
+def fetch_youtube(channel_id, channel_name, limit=3):
+    """Fetch YouTube channel videos via RSS feed (text-only)"""
+    try:
+        log(f"Fetching YouTube: {channel_name} ({channel_id})")
+        import feedparser
+        import requests
+        from datetime import datetime
+        from dateutil import parser as date_parser
+        
+        url = f'https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
+            'Accept': 'application/xml, text/xml'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        log(f"YouTube fetch successful: {channel_name}")
+        
+        feed = feedparser.parse(response.content)
+        log(f"Parsed {len(feed.entries)} entries from YouTube channel {channel_name}")
+        
+        videos = []
+        for entry in feed.entries[:limit]:
+            published = entry.get('published', entry.get('updated', ''))
+            try:
+                if published:
+                    dt = date_parser.parse(published)
+                    time_ago = get_time_ago(dt)
+                else:
+                    time_ago = ''
+            except Exception as e:
+                log(f"Error parsing date: {e}")
+                time_ago = ''
+            
+            videos.append({
+                'title': entry.get('title', 'No title')[:150],
+                'link': entry.get('link', '#'),
+                'published': time_ago
+            })
+        
+        log(f"Returning {len(videos)} videos from {channel_name}")
+        return videos
+    except Exception as e:
+        log(f"ERROR fetching YouTube {channel_name}: {e}")
+        log(traceback.format_exc())
+        return []
+
+def fetch_twitch_status(channel_name):
+    """Fetch Twitch live status using GraphQL API (no OAuth required)"""
+    try:
+        log(f"Fetching Twitch status: {channel_name}")
+        import requests
+        
+        # Public Client-ID used by Twitch web (same method as Glance)
+        client_id = 'kimne78kx3ncx6brgo4mv6wki5h1ko'
+        
+        query = """
+        query GetStreamInfo($login: String!) {
+            user(login: $login) {
+                displayName
+                login
+                stream {
+                    title
+                    viewersCount
+                    game {
+                        name
+                    }
+                }
+            }
+        }
+        """
+        
+        headers = {
+            'Client-ID': client_id,
+            'Content-Type': 'application/json',
+        }
+        
+        payload = {
+            'query': query,
+            'variables': {'login': channel_name.lower()}
+        }
+        
+        response = requests.post(
+            'https://gql.twitch.tv/gql',
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        log(f"Twitch fetch successful: {channel_name}")
+        
+        user_data = data.get('data', {}).get('user')
+        if not user_data:
+            log(f"Twitch user not found: {channel_name}")
+            return {
+                'name': channel_name,
+                'display_name': channel_name,
+                'is_live': False,
+                'game': '',
+                'viewers': 0,
+                'title': ''
+            }
+        
+        stream = user_data.get('stream')
+        if stream:
+            return {
+                'name': user_data.get('login', channel_name),
+                'display_name': user_data.get('displayName', channel_name),
+                'is_live': True,
+                'game': stream.get('game', {}).get('name', '') if stream.get('game') else '',
+                'viewers': stream.get('viewersCount', 0),
+                'title': stream.get('title', '')[:100]
+            }
+        else:
+            return {
+                'name': user_data.get('login', channel_name),
+                'display_name': user_data.get('displayName', channel_name),
+                'is_live': False,
+                'game': '',
+                'viewers': 0,
+                'title': ''
+            }
+    except Exception as e:
+        log(f"ERROR fetching Twitch {channel_name}: {e}")
+        log(traceback.format_exc())
+        return {
+            'name': channel_name,
+            'display_name': channel_name,
+            'is_live': False,
+            'game': '',
+            'viewers': 0,
+            'title': '',
+            'error': True
+        }
+
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "public, max-age=300"
@@ -187,9 +324,47 @@ def root():
                 })
         
         log(f"Fetched data from {len(reddit_data)} subreddits")
+        
+        # Fetch YouTube channels (limit to 3)
+        youtube_data = []
+        youtube_channels = config.get('youtube_channels', [])[:3]
+        log(f"Processing {len(youtube_channels)} YouTube channels")
+        
+        for channel in youtube_channels:
+            videos = fetch_youtube(
+                channel.get('channel_id'),
+                channel.get('name'),
+                channel.get('limit', 3)
+            )
+            if videos:
+                youtube_data.append({
+                    'name': channel.get('name'),
+                    'category': channel.get('category', 'General'),
+                    'videos': videos
+                })
+        
+        log(f"Fetched data from {len(youtube_data)} YouTube channels")
+        
+        # Fetch Twitch status (limit to 5)
+        twitch_data = []
+        twitch_channels = config.get('twitch_channels', [])[:5]
+        log(f"Processing {len(twitch_channels)} Twitch channels")
+        
+        for channel in twitch_channels:
+            status = fetch_twitch_status(channel)
+            twitch_data.append(status)
+        
+        log(f"Fetched status from {len(twitch_data)} Twitch channels")
+        
         log("=== Rendering template ===")
         
-        return render_template('index.html', config=config, reddit_data=reddit_data)
+        return render_template(
+            'index.html',
+            config=config,
+            reddit_data=reddit_data,
+            youtube_data=youtube_data,
+            twitch_data=twitch_data
+        )
     
     except Exception as e:
         log(f"CRITICAL ERROR in root route: {e}")

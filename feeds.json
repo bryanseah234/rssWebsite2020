@@ -47,5 +47,20 @@
     "shortcuts",
     "nostupidquestions",
     "internetisbeautiful"
+  ],
+  "youtube_channels": [
+    {"name": "Linus Tech Tips", "channel_id": "UCXuqSBlHAE6Xw-yeJA0Tunw", "category": "Tech", "limit": 3},
+    {"name": "MKBHD", "channel_id": "UCBJycsmduvYEL83R_U4JriQ", "category": "Tech", "limit": 3},
+    {"name": "The Verge", "channel_id": "UCddiUEpeqJcYeBxX1IVBKvQ", "category": "Tech", "limit": 3},
+    {"name": "Lofi Girl", "channel_id": "UCSJ4gkVC6NrvII8umztf0Ow", "category": "Chill", "limit": 3},
+    {"name": "ChilledCow", "channel_id": "UCOxqgCwgOqC2lMqC5PYz_Dg", "category": "Chill", "limit": 3},
+    {"name": "Philip DeFranco", "channel_id": "UClFSU9_bUb4Rc6OYfTt5SPw", "category": "Update", "limit": 3}
+  ],
+  "twitch_channels": [
+    "shroud",
+    "pokimane",
+    "xQc",
+    "Ninja",
+    "summit1g"
   ]
 }
