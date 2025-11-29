@@ -3,89 +3,89 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Feed Dashboard</title>
+        <title>Prawn Dashboard</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    </head>
+    <body>
+        <div class="page-header">
+            <h1>Prawn Dashboard</h1>
+        </div>
+
+        <div class="container">
+            <div class="grid">
+                <!-- RSS Feed Sections -->
+                {% for section in config.sections %}
+                    {% for feed in section.feeds %}
+                        <div class="widget">
+                            <div class="widget-header">
+                                <h3>{{ feed.name }}</h3>
+                                <span class="widget-badge">{{ section.title }}</span>
+                            </div>
+                            <div class="widget-content">
+                                {% if feed.items %}
+                                    <ul class="feed-list">
+                                        {% for item in feed.items %}
+                                            <li class="feed-item">
+                                                <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                                    <div class="feed-title">{{ item.title }}</div>
+                                                    {% if item.published %}
+                                                        <div class="feed-time">{{ item.published }}</div>
+                                                    {% endif %}
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <div class="empty-state">No items available</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% endfor %}
+
+                <!-- Reddit Sections -->
+                {% for reddit in reddit_data %}
+                    <div class="widget">
+                        <div class="widget-header">
+                            <h3>{{ reddit.name }}</h3>
+                            <span class="widget-badge">Reddit</span>
+                        </div>
+                        <div class="widget-content">
+                            <ul class="feed-list">
+                                {% for post in reddit.posts %}
+                                    <li class="feed-item">
+                                        <a href="{{ post.link }}" target="_blank" rel="noopener">
+                                            <div class="feed-title">{{ post.title }}</div>
+                                            <div class="feed-meta">
+                                                <span class="upvotes">↑ {{ post.score }}</span>
+                                                <span class="comments">💬 {{ post.comments }}</span>
+                                            </div>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
         <script>
-            // Add to templates/index.html before </body>
-            // Makes feed sections collapsible like Glance
-            
-            document.addEventListener('DOMContentLoaded', function() {
-                const widgets = document.querySelectorAll('.container1, .container2, .container3');
-                
-                widgets.forEach(widget => {
-                    const header = widget.querySelector('h3');
-                    if (!header) return;
+            // Optional: Collapsible widgets
+            document.querySelectorAll('.widget-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const widget = this.closest('.widget');
+                    const content = widget.querySelector('.widget-content');
                     
-                    // Make header clickable
-                    header.style.cursor = 'pointer';
-                    header.style.userSelect = 'none';
+                    widget.classList.toggle('collapsed');
                     
-                    // Add collapse indicator
-                    const indicator = document.createElement('span');
-                    indicator.textContent = '−';
-                    indicator.style.float = 'right';
-                    indicator.style.fontWeight = '300';
-                    indicator.style.fontSize = '18px';
-                    header.appendChild(indicator);
-                    
-                    // Toggle collapse on click
-                    header.addEventListener('click', function() {
-                        const iframe = widget.querySelector('iframe');
-                        if (!iframe) return;
-                        
-                        const isCollapsed = iframe.style.display === 'none';
-                        
-                        if (isCollapsed) {
-                            iframe.style.display = 'block';
-                            indicator.textContent = '−';
-                        } else {
-                            iframe.style.display = 'none';
-                            indicator.textContent = '+';
-                        }
-                        
-                        // Save state to localStorage
-                        const feedName = header.textContent.replace(/[−+]/g, '').trim();
-                        localStorage.setItem(`collapsed_${feedName}`, !isCollapsed);
-                    });
-                    
-                    // Restore collapse state
-                    const feedName = header.textContent.trim();
-                    const wasCollapsed = localStorage.getItem(`collapsed_${feedName}`) === 'true';
-                    if (wasCollapsed) {
-                        const iframe = widget.querySelector('iframe');
-                        if (iframe) {
-                            iframe.style.display = 'none';
-                            indicator.textContent = '+';
-                        }
+                    if (widget.classList.contains('collapsed')) {
+                        content.style.display = 'none';
+                    } else {
+                        content.style.display = 'block';
                     }
                 });
             });
         </script>
-    </head>
-    <body>
-        <div id="container">
-            {% for section in config.sections %}
-                <div class="header">
-                    <h2>{{ section.title }}</h2>
-                </div>
-
-                {% for feed in section.feeds %}
-                    <div class="{{ feed.container }}">
-                        <h3>{{ feed.name }}</h3>
-                        <iframe 
-                            width="100%" 
-                            height="600" 
-                            src="{{ build_url(feed.url) }}"
-                            loading="lazy"
-                            title="{{ feed.name }} Feed">
-                        </iframe>
-                    </div>
-                {% endfor %}
-            {% endfor %}
-        </div>
-
-        <div class="footer">
-            <span>Powered by RSS Feeds</span>
-        </div>
     </body>
 </html>
