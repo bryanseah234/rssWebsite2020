@@ -352,18 +352,26 @@ def root():
         log(f"Processing {len(subreddits)} subreddits")
 
         with ThreadPoolExecutor(max_workers=REDDIT_MAX_WORKERS) as executor:
-            future_to_subreddit = {
-                executor.submit(fetch_reddit, sub, 5): sub
-                for sub in subreddits
-            }
 
+            completed = set()
             for future in as_completed(future_to_subreddit, timeout=PARALLEL_TIMEOUT):
+                completed.add(future)
                 subreddit = future_to_subreddit[future]
                 try:
                     posts = future.result()
                     if posts:
                         reddit_data.append({
                             'name': f'r/{subreddit}',
+                            'posts': posts
+                        })
+                except Exception as e:
+                    log(f"Error fetching r/{subreddit}: {e}")
+
+            # Cancel and record timeouts
+            for future, subreddit in future_to_subreddit.items():
+                if future not in completed:
+                    future.cancel()
+                    log(f"Reddit fetch timed out: r/{subreddit}")
                             'posts': posts
                         })
                 except Exception as e:
