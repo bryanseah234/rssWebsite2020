@@ -331,51 +331,57 @@
                 
                 // Fetch via serverless API
                 fetch('/api/rss?feedUrl=' + encodeURIComponent(feedUrl) + '&limit=5')
-                    .then(function(res) { return res.json(); })
+                    .then(function(res) { return res.ok ? res.json() : Promise.reject(new Error('HTTP ' + res.status)); })
                     .then(function(data) {
-                        if (data.items && data.items.length > 0) {
-                            // Update widget with fetched data using safe DOM manipulation
-                            var list = document.createElement('ul');
-                            list.className = 'feed-list';
-                            data.items.forEach(function(item) {
-                                var li = document.createElement('li');
-                                li.className = 'feed-item';
-                                
-                                var a = document.createElement('a');
-                                a.href = item.link;
-                                a.target = '_blank';
-                                a.rel = 'noopener';
-                                
-                                var titleDiv = document.createElement('div');
-                                titleDiv.className = 'feed-title';
-                                titleDiv.textContent = item.title;
-                                a.appendChild(titleDiv);
-                                
-                                var timeAgo = item.pubDate ? formatTimeAgo(item.pubDate) : '';
-                                if (timeAgo) {
-                                    var timeDiv = document.createElement('div');
-                                    timeDiv.className = 'feed-time';
-                                    timeDiv.textContent = timeAgo;
-                                    a.appendChild(timeDiv);
-                                }
-                                
-                                li.appendChild(a);
-                                list.appendChild(li);
-                            });
-                            var widgetContent = widget.querySelector('.widget-content');
-                            widgetContent.innerHTML = '';
-                            widgetContent.appendChild(list);
-                            // Add footer
-                            var footer = document.createElement('div');
-                            footer.className = 'widget-footer';
-                            var small = document.createElement('small');
-                            small.textContent = 'Loaded ' + data.items.length + ' items (client-side)';
-                            footer.appendChild(small);
-                            widgetContent.appendChild(footer);
-                        } else {
-                            // No items, show error
+                        if (!data || !Array.isArray(data.items) || data.items.length === 0) {
                             errorWidget.innerHTML = '<span class="status-icon">❌</span><p>No items found</p>';
+                            return;
                         }
+                        var list = document.createElement('ul');
+                        list.className = 'feed-list';
+                        data.items.forEach(function(item) {
+                            var title = item && typeof item.title === 'string' ? item.title : 'Untitled';
+                            var link = item && typeof item.link === 'string' ? item.link : '';
+                            var pubDate = item && typeof item.pubDate === 'string' ? item.pubDate : null;
+
+                            var li = document.createElement('li');
+                            li.className = 'feed-item';
+
+                            var a = document.createElement('a');
+                            // Only set href if link looks like an absolute URL
+                            if (/^https?:\/\//i.test(link)) {
+                                a.href = link;
+                            } else {
+                                a.removeAttribute('href');
+                            }
+                            a.target = '_blank';
+                            a.rel = 'noopener';
+
+                            var titleDiv = document.createElement('div');
+                            titleDiv.className = 'feed-title';
+                            titleDiv.textContent = title;
+                            a.appendChild(titleDiv);
+
+                            var timeAgo = pubDate ? formatTimeAgo(pubDate) : '';
+                            if (timeAgo) {
+                                var timeDiv = document.createElement('div');
+                                timeDiv.className = 'feed-time';
+                                timeDiv.textContent = timeAgo;
+                                a.appendChild(timeDiv);
+                            }
+
+                            li.appendChild(a);
+                            list.appendChild(li);
+                        });
+                        var widgetContent = widget.querySelector('.widget-content');
+                        widgetContent.innerHTML = '';
+                        widgetContent.appendChild(list);
+                        var footer = document.createElement('div');
+                        footer.className = 'widget-footer';
+                        var small = document.createElement('small');
+                        small.textContent = 'Loaded ' + data.items.length + ' items (client-side)';
+                        footer.appendChild(small);
+                        widgetContent.appendChild(footer);
                     })
                     .catch(function(err) {
                         console.error('Client-side fetch failed for', feedUrl, err);
