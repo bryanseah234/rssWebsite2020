@@ -1,5 +1,7 @@
 from flask import Flask, render_template, jsonify
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from urllib.parse import urlparse
+import ipaddress
 import json
 import os
 import sys
@@ -21,6 +23,42 @@ TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
 def log(message):
     """Helper function for logging"""
     print(f"[LOG] {message}", file=sys.stderr, flush=True)
+
+
+# Security: Allowed schemes and blocked hosts for SSRF protection
+ALLOWED_SCHEMES = {'http', 'https'}
+BLOCKED_HOSTS = {'localhost', 'localhost.localdomain',
+                 '127.0.0.1', '0.0.0.0', '0', '169.254.169.254', '::1'}
+
+
+def is_safe_url(url):
+    """Validate URL to prevent SSRF attacks"""
+    try:
+        parsed = urlparse(url)
+        # Check scheme
+        if parsed.scheme.lower() not in ALLOWED_SCHEMES:
+            log(f"Blocked URL with invalid scheme: {url}")
+            return False
+        # Check for blocked hostnames
+        hostname = parsed.hostname
+        if hostname is None:
+            log(f"Blocked URL with missing hostname: {url}")
+            return False
+        if hostname.lower() in BLOCKED_HOSTS:
+            log(f"Blocked URL with forbidden host: {url}")
+            return False
+        # Check for private/internal IP addresses
+        try:
+            ip = ipaddress.ip_address(hostname)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                log(f"Blocked URL with private/internal IP: {url}")
+                return False
+        except ValueError:
+            pass  # Not an IP address, hostname is fine
+        return True
+    except Exception as e:
+        log(f"Error validating URL {url}: {e}")
+        return False
 
 
 def load_feeds_config():
@@ -49,6 +87,11 @@ def load_feeds_config():
 
 def fetch_rss_feed(url, limit=5):
     """Fetch and parse RSS feed"""
+    # Security: Validate URL before fetching
+    if not is_safe_url(url):
+        log(f"Skipping unsafe URL: {url}")
+        return []
+
     try:
         log(f"Fetching RSS feed: {url}")
         import feedparser
@@ -343,6 +386,9 @@ def root():
             except TimeoutError:
                 log(
                     f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
+                # Cancel pending futures to prevent resource leaks
+                for future in future_to_feed:
+                    future.cancel()
 
         log(f"Processed {len(all_feeds)} feeds total")
 
@@ -352,30 +398,29 @@ def root():
         log(f"Processing {len(subreddits)} subreddits")
 
         with ThreadPoolExecutor(max_workers=REDDIT_MAX_WORKERS) as executor:
+            future_to_subreddit = {
+                executor.submit(fetch_reddit, sub, 5): sub
+                for sub in subreddits
+            }
 
-            completed = set()
-            for future in as_completed(future_to_subreddit, timeout=PARALLEL_TIMEOUT):
-                completed.add(future)
-                subreddit = future_to_subreddit[future]
-                try:
-                    posts = future.result()
-                    if posts:
-                        reddit_data.append({
-                            'name': f'r/{subreddit}',
-                            'posts': posts
-                        })
-                except Exception as e:
-                    log(f"Error fetching r/{subreddit}: {e}")
-
-            # Cancel and record timeouts
-            for future, subreddit in future_to_subreddit.items():
-                if future not in completed:
+            try:
+                for future in as_completed(future_to_subreddit, timeout=PARALLEL_TIMEOUT):
+                    subreddit = future_to_subreddit[future]
+                    try:
+                        posts = future.result()
+                        if posts:
+                            reddit_data.append({
+                                'name': f'r/{subreddit}',
+                                'posts': posts
+                            })
+                    except Exception as e:
+                        log(f"Error fetching r/{subreddit}: {e}")
+            except TimeoutError:
+                log(
+                    f"Reddit fetching timed out after {PARALLEL_TIMEOUT} seconds")
+                # Cancel pending futures to prevent resource leaks
+                for future in future_to_subreddit:
                     future.cancel()
-                    log(f"Reddit fetch timed out: r/{subreddit}")
-                            'posts': posts
-                        })
-                except Exception as e:
-                    log(f"Error fetching r/{subreddit}: {e}")
 
         log(f"Fetched data from {len(reddit_data)} subreddits")
 
@@ -394,24 +439,31 @@ def root():
                 ): channel for channel in youtube_channels
             }
 
-            for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
-                channel = future_to_channel[future]
-                try:
-                    videos = future.result()
-                    youtube_data.append({
-                        'name': channel.get('name'),
-                        'category': channel.get('category', 'General'),
-                        'videos': videos,
-                        'error': len(videos) == 0
-                    })
-                except Exception as e:
-                    log(f"Error fetching YouTube {channel.get('name')}: {e}")
-                    youtube_data.append({
-                        'name': channel.get('name'),
-                        'category': channel.get('category', 'General'),
-                        'videos': [],
-                        'error': True
-                    })
+            try:
+                for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
+                    channel = future_to_channel[future]
+                    try:
+                        videos = future.result()
+                        youtube_data.append({
+                            'name': channel.get('name'),
+                            'category': channel.get('category', 'General'),
+                            'videos': videos,
+                            'error': len(videos) == 0
+                        })
+                    except Exception as e:
+                        log(f"Error fetching YouTube {channel.get('name')}: {e}")
+                        youtube_data.append({
+                            'name': channel.get('name'),
+                            'category': channel.get('category', 'General'),
+                            'videos': [],
+                            'error': True
+                        })
+            except TimeoutError:
+                log(
+                    f"YouTube fetching timed out after {PARALLEL_TIMEOUT} seconds")
+                # Cancel pending futures to prevent resource leaks
+                for future in future_to_channel:
+                    future.cancel()
 
         log(f"Fetched data from {len(youtube_data)} YouTube channels")
 
@@ -426,22 +478,29 @@ def root():
                 for channel in twitch_channels
             }
 
-            for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
-                channel = future_to_channel[future]
-                try:
-                    status = future.result()
-                    twitch_data.append(status)
-                except Exception as e:
-                    log(f"Error fetching Twitch {channel}: {e}")
-                    twitch_data.append({
-                        'name': channel,
-                        'display_name': channel,
-                        'is_live': False,
-                        'game': '',
-                        'viewers': 0,
-                        'title': '',
-                        'error': True
-                    })
+            try:
+                for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
+                    channel = future_to_channel[future]
+                    try:
+                        status = future.result()
+                        twitch_data.append(status)
+                    except Exception as e:
+                        log(f"Error fetching Twitch {channel}: {e}")
+                        twitch_data.append({
+                            'name': channel,
+                            'display_name': channel,
+                            'is_live': False,
+                            'game': '',
+                            'viewers': 0,
+                            'title': '',
+                            'error': True
+                        })
+            except TimeoutError:
+                log(
+                    f"Twitch fetching timed out after {PARALLEL_TIMEOUT} seconds")
+                # Cancel pending futures to prevent resource leaks
+                for future in future_to_channel:
+                    future.cancel()
 
         log(f"Fetched status from {len(twitch_data)} Twitch channels")
 
