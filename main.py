@@ -258,15 +258,14 @@ def fetch_twitch_status(channel_name):
                 'viewers': stream.get('viewersCount', 0),
                 'title': stream.get('title', '')[:100]
             }
-        else:
-            return {
-                'name': user_data.get('login', channel_name),
-                'display_name': user_data.get('displayName', channel_name),
-                'is_live': False,
-                'game': '',
-                'viewers': 0,
-                'title': ''
-            }
+        return {
+            'name': user_data.get('login', channel_name),
+            'display_name': user_data.get('displayName', channel_name),
+            'is_live': False,
+            'game': '',
+            'viewers': 0,
+            'title': ''
+        }
     except Exception as e:
         log(f"ERROR fetching Twitch {channel_name}: {e}")
         log(traceback.format_exc())
