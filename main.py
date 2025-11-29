@@ -9,9 +9,11 @@ import time
 
 app = Flask(__name__, template_folder='templates')
 
+
 def load_feeds_config():
     with open('feeds.json', 'r') as f:
         return json.load(f)
+
 
 @lru_cache(maxsize=128)
 def fetch_rss_feed(url, limit=5):
@@ -20,9 +22,9 @@ def fetch_rss_feed(url, limit=5):
         # Set timeout and user agent
         headers = {'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)'}
         response = requests.get(url, headers=headers, timeout=10)
-        
+
         feed = feedparser.parse(response.content)
-        
+
         items = []
         for entry in feed.entries[:limit]:
             # Parse published date
@@ -35,26 +37,27 @@ def fetch_rss_feed(url, limit=5):
                     time_ago = ''
             except:
                 time_ago = ''
-            
+
             items.append({
                 'title': entry.get('title', 'No title'),
                 'link': entry.get('link', '#'),
                 'published': time_ago,
                 'summary': entry.get('summary', '')[:200] if entry.get('summary') else ''
             })
-        
+
         return items
     except Exception as e:
         print(f"Error fetching {url}: {e}")
         return []
 
+
 def get_time_ago(dt):
     """Convert datetime to relative time"""
     now = datetime.now(dt.tzinfo) if dt.tzinfo else datetime.now()
     diff = now - dt
-    
+
     seconds = diff.total_seconds()
-    
+
     if seconds < 60:
         return 'just now'
     elif seconds < 3600:
@@ -70,6 +73,7 @@ def get_time_ago(dt):
         weeks = int(seconds / 604800)
         return f'{weeks}w ago'
 
+
 @lru_cache(maxsize=32)
 def fetch_reddit(subreddit, limit=10):
     """Fetch Reddit posts"""
@@ -78,7 +82,7 @@ def fetch_reddit(subreddit, limit=10):
         headers = {'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)'}
         response = requests.get(url, headers=headers, timeout=10)
         data = response.json()
-        
+
         posts = []
         for post in data['data']['children'][:limit]:
             p = post['data']
@@ -93,6 +97,7 @@ def fetch_reddit(subreddit, limit=10):
         print(f"Error fetching r/{subreddit}: {e}")
         return []
 
+
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -101,15 +106,16 @@ def add_header(response):
     response.cache_control.max_age = 0
     return response
 
+
 @app.route('/', methods=['GET'])
 def root():
     config = load_feeds_config()
-    
+
     # Fetch all RSS feeds
     for section in config['sections']:
         for feed in section['feeds']:
             feed['items'] = fetch_rss_feed(feed['url'], feed.get('limit', 5))
-    
+
     # Fetch Reddit posts
     reddit_data = []
     for subreddit in config.get('subreddits', []):
@@ -119,5 +125,5 @@ def root():
                 'name': f'r/{subreddit}',
                 'posts': posts
             })
-    
+
     return render_template('index.html', config=config, reddit_data=reddit_data)
