@@ -3,12 +3,66 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>rssWebsite</title>
+        <title>Feed Dashboard</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+        <script>
+            // Add to templates/index.html before </body>
+            // Makes feed sections collapsible like Glance
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                const widgets = document.querySelectorAll('.container1, .container2, .container3');
+                
+                widgets.forEach(widget => {
+                    const header = widget.querySelector('h3');
+                    if (!header) return;
+                    
+                    // Make header clickable
+                    header.style.cursor = 'pointer';
+                    header.style.userSelect = 'none';
+                    
+                    // Add collapse indicator
+                    const indicator = document.createElement('span');
+                    indicator.textContent = '−';
+                    indicator.style.float = 'right';
+                    indicator.style.fontWeight = '300';
+                    indicator.style.fontSize = '18px';
+                    header.appendChild(indicator);
+                    
+                    // Toggle collapse on click
+                    header.addEventListener('click', function() {
+                        const iframe = widget.querySelector('iframe');
+                        if (!iframe) return;
+                        
+                        const isCollapsed = iframe.style.display === 'none';
+                        
+                        if (isCollapsed) {
+                            iframe.style.display = 'block';
+                            indicator.textContent = '−';
+                        } else {
+                            iframe.style.display = 'none';
+                            indicator.textContent = '+';
+                        }
+                        
+                        // Save state to localStorage
+                        const feedName = header.textContent.replace(/[−+]/g, '').trim();
+                        localStorage.setItem(`collapsed_${feedName}`, !isCollapsed);
+                    });
+                    
+                    // Restore collapse state
+                    const feedName = header.textContent.trim();
+                    const wasCollapsed = localStorage.getItem(`collapsed_${feedName}`) === 'true';
+                    if (wasCollapsed) {
+                        const iframe = widget.querySelector('iframe');
+                        if (iframe) {
+                            iframe.style.display = 'none';
+                            indicator.textContent = '+';
+                        }
+                    }
+                });
+            });
+        </script>
     </head>
     <body>
-        <div class="top"></div>
-
         <div id="container">
             {% for section in config.sections %}
                 <div class="header">
@@ -19,17 +73,19 @@
                     <div class="{{ feed.container }}">
                         <h3>{{ feed.name }}</h3>
                         <iframe 
-                            width="{{ '1200' if feed.size == 'full' else '550' }}" 
+                            width="100%" 
                             height="600" 
-                            class="{{ 'rssdog' if feed.size == 'full' else 'center' }}"
                             src="{{ build_url(feed.url) }}"
-                            loading="lazy">
+                            loading="lazy"
+                            title="{{ feed.name }} Feed">
                         </iframe>
                     </div>
                 {% endfor %}
             {% endfor %}
         </div>
 
-        <div class="footer"></div>
+        <div class="footer">
+            <span>Powered by RSS Feeds</span>
+        </div>
     </body>
 </html>
