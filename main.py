@@ -341,7 +341,8 @@ def root():
                         sections[feed_info['section_idx']
                                  ]['feeds'][feed_info['feed_idx']]['items'] = []
             except TimeoutError:
-                log(f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
+                log(
+                    f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
 
         log(f"Processed {len(all_feeds)} feeds total")
 
