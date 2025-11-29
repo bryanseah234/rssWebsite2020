@@ -100,7 +100,7 @@
                 <!-- RSS Feed Sections -->
                 {% for section in config.sections %}
                     {% for feed in section.feeds %}
-                        <div class="widget" data-feed="{{ feed.name }}">
+                        <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
                             <div class="widget-header">
                                 <h3>{{ feed.name }}</h3>
                                 <span class="widget-badge">{{ section.title }}</span>
@@ -212,6 +212,73 @@
                         content.style.display = 'block';
                     }
                 });
+            });
+
+            // Client-side progressive loading for failed feeds
+            function formatTimeAgo(dateStr) {
+                try {
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMins / 60);
+                    const diffDays = Math.floor(diffHours / 24);
+                    
+                    if (diffMins < 60) return diffMins + 'm ago';
+                    if (diffHours < 24) return diffHours + 'h ago';
+                    if (diffDays < 7) return diffDays + 'd ago';
+                    return Math.floor(diffDays / 7) + 'w ago';
+                } catch (e) {
+                    return '';
+                }
+            }
+
+            // Retry any failed feeds via client-side API
+            document.querySelectorAll('.widget .empty-state.error').forEach(function(errorWidget) {
+                const widget = errorWidget.closest('.widget');
+                const feedUrl = widget.dataset.feedUrl;
+                if (!feedUrl) return;
+                
+                // Show loading state
+                errorWidget.innerHTML = '<span class="status-icon">⏳</span><p>Retrying...</p>';
+                
+                // Fetch via serverless API
+                fetch('/api/rss?feedUrl=' + encodeURIComponent(feedUrl) + '&limit=5')
+                    .then(function(res) { return res.json(); })
+                    .then(function(data) {
+                        if (data.items && data.items.length > 0) {
+                            // Update widget with fetched data
+                            var list = document.createElement('ul');
+                            list.className = 'feed-list';
+                            data.items.forEach(function(item) {
+                                var li = document.createElement('li');
+                                li.className = 'feed-item';
+                                var timeAgo = item.pubDate ? formatTimeAgo(item.pubDate) : '';
+                                li.innerHTML = 
+                                    '<a href="' + item.link + '" target="_blank" rel="noopener">' +
+                                        '<div class="feed-title">' + item.title + '</div>' +
+                                        (timeAgo ? '<div class="feed-time">' + timeAgo + '</div>' : '') +
+                                    '</a>';
+                                list.appendChild(li);
+                            });
+                            var widgetContent = widget.querySelector('.widget-content');
+                            widgetContent.innerHTML = '';
+                            widgetContent.appendChild(list);
+                            // Add footer
+                            var footer = document.createElement('div');
+                            footer.className = 'widget-footer';
+                            footer.innerHTML = '<small>Loaded ' + data.items.length + ' items (client-side)</small>';
+                            widgetContent.appendChild(footer);
+                        } else {
+                            // No items, show error
+                            errorWidget.innerHTML = '<span class="status-icon">❌</span><p>No items found</p>';
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error('Client-side fetch failed for', feedUrl, err);
+                        // Keep showing error state
+                        errorWidget.innerHTML = '<span class="status-icon">❌</span><p>Failed to load feed</p><small>' + feedUrl + '</small>';
+                    });
             });
         </script>
     </body>

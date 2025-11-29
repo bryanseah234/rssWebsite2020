@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import sys
@@ -52,7 +53,7 @@ def fetch_rss_feed(url, limit=5):
             'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
             'Accept': 'application/rss+xml, application/xml, text/xml'
         }
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         log(f"RSS fetch successful: {url} (status: {response.status_code})")
 
@@ -117,7 +118,7 @@ def fetch_reddit(subreddit, limit=5):
 
         url = f'https://www.reddit.com/r/{subreddit}/top.json?limit={limit}&t=day'
         headers = {'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)'}
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         data = response.json()
 
@@ -155,7 +156,7 @@ def fetch_youtube(channel_id, channel_name, limit=3):
             'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
             'Accept': 'application/xml, text/xml'
         }
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         log(f"YouTube fetch successful: {channel_name}")
 
@@ -228,7 +229,7 @@ def fetch_twitch_status(channel_name):
             'https://gql.twitch.tv/gql',
             headers=headers,
             json=payload,
-            timeout=10
+            timeout=5
         )
         response.raise_for_status()
         data = response.json()
@@ -295,75 +296,131 @@ def root():
         config = load_feeds_config()
         log(f"Config loaded. Sections: {len(config.get('sections', []))}")
 
-        # Fetch feeds (limit to prevent timeout)
-        max_feeds = 10
-        feed_count = 0
-
         sections = config.get('sections', [])
         log(f"Processing {len(sections)} sections")
 
-        for idx, section in enumerate(sections):
-            log(f"Processing section {idx + 1}: {section.get('title', 'Untitled')}")
+        # Collect all feeds with section and index info for parallel fetching
+        all_feeds = []
+        for section_idx, section in enumerate(sections):
             feeds = section.get('feeds', [])
-            log(f"Section has {len(feeds)} feeds")
-
             for feed_idx, feed in enumerate(feeds):
-                log(f"Processing feed {feed_idx + 1}: {feed.get('name', 'Unnamed')}")
+                all_feeds.append({
+                    'section_idx': section_idx,
+                    'feed_idx': feed_idx,
+                    'feed': feed
+                })
 
-                if feed_count >= max_feeds:
-                    log(f"Reached max feeds limit ({max_feeds}), skipping remaining")
-                    feed['items'] = []
-                    continue
+        log(f"Total feeds to fetch: {len(all_feeds)}")
 
-                feed['items'] = fetch_rss_feed(
-                    feed['url'], feed.get('limit', 5))
-                feed_count += 1
+        # Fetch all RSS feeds in parallel
+        with ThreadPoolExecutor(max_workers=15) as executor:
+            future_to_feed = {
+                executor.submit(
+                    fetch_rss_feed,
+                    f['feed']['url'],
+                    f['feed'].get('limit', 5)
+                ): f for f in all_feeds
+            }
 
-        log(f"Processed {feed_count} feeds total")
+            for future in as_completed(future_to_feed, timeout=8):
+                feed_info = future_to_feed[future]
+                try:
+                    items = future.result()
+                    sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]['items'] = items
+                except Exception as e:
+                    log(f"Error fetching {feed_info['feed']['url']}: {e}")
+                    sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]['items'] = []
 
-        # Fetch Reddit (limit to 2 subreddits)
+        log(f"Processed {len(all_feeds)} feeds total")
+
+        # Fetch all subreddits in parallel
         reddit_data = []
-        subreddits = config.get('subreddits', [])[:2]
+        subreddits = config.get('subreddits', [])
         log(f"Processing {len(subreddits)} subreddits")
 
-        for subreddit in subreddits:
-            posts = fetch_reddit(subreddit, 5)
-            if posts:
-                reddit_data.append({
-                    'name': f'r/{subreddit}',
-                    'posts': posts
-                })
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            future_to_subreddit = {
+                executor.submit(fetch_reddit, sub, 5): sub
+                for sub in subreddits
+            }
+
+            for future in as_completed(future_to_subreddit, timeout=8):
+                subreddit = future_to_subreddit[future]
+                try:
+                    posts = future.result()
+                    if posts:
+                        reddit_data.append({
+                            'name': f'r/{subreddit}',
+                            'posts': posts
+                        })
+                except Exception as e:
+                    log(f"Error fetching r/{subreddit}: {e}")
 
         log(f"Fetched data from {len(reddit_data)} subreddits")
 
-        # Fetch YouTube channels (limit to 3)
+        # Fetch all YouTube channels in parallel
         youtube_data = []
-        youtube_channels = config.get('youtube_channels', [])[:3]
+        youtube_channels = config.get('youtube_channels', [])
         log(f"Processing {len(youtube_channels)} YouTube channels")
 
-        for channel in youtube_channels:
-            videos = fetch_youtube(
-                channel.get('channel_id'),
-                channel.get('name'),
-                channel.get('limit', 3)
-            )
-            youtube_data.append({
-                'name': channel.get('name'),
-                'category': channel.get('category', 'General'),
-                'videos': videos,
-                'error': len(videos) == 0
-            })
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            future_to_channel = {
+                executor.submit(
+                    fetch_youtube,
+                    channel.get('channel_id'),
+                    channel.get('name'),
+                    channel.get('limit', 3)
+                ): channel for channel in youtube_channels
+            }
+
+            for future in as_completed(future_to_channel, timeout=8):
+                channel = future_to_channel[future]
+                try:
+                    videos = future.result()
+                    youtube_data.append({
+                        'name': channel.get('name'),
+                        'category': channel.get('category', 'General'),
+                        'videos': videos,
+                        'error': len(videos) == 0
+                    })
+                except Exception as e:
+                    log(f"Error fetching YouTube {channel.get('name')}: {e}")
+                    youtube_data.append({
+                        'name': channel.get('name'),
+                        'category': channel.get('category', 'General'),
+                        'videos': [],
+                        'error': True
+                    })
 
         log(f"Fetched data from {len(youtube_data)} YouTube channels")
 
-        # Fetch Twitch status (limit to 5)
+        # Fetch all Twitch channels in parallel
         twitch_data = []
-        twitch_channels = config.get('twitch_channels', [])[:5]
+        twitch_channels = config.get('twitch_channels', [])
         log(f"Processing {len(twitch_channels)} Twitch channels")
 
-        for channel in twitch_channels:
-            status = fetch_twitch_status(channel)
-            twitch_data.append(status)
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_channel = {
+                executor.submit(fetch_twitch_status, channel): channel
+                for channel in twitch_channels
+            }
+
+            for future in as_completed(future_to_channel, timeout=8):
+                channel = future_to_channel[future]
+                try:
+                    status = future.result()
+                    twitch_data.append(status)
+                except Exception as e:
+                    log(f"Error fetching Twitch {channel}: {e}")
+                    twitch_data.append({
+                        'name': channel,
+                        'display_name': channel,
+                        'is_live': False,
+                        'game': '',
+                        'viewers': 0,
+                        'title': '',
+                        'error': True
+                    })
 
         log(f"Fetched status from {len(twitch_data)} Twitch channels")
 
