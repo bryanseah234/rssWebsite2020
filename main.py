@@ -27,7 +27,7 @@ def log(message):
 
 # Security: Allowed schemes and blocked hosts for SSRF protection
 ALLOWED_SCHEMES = {'http', 'https'}
-BLOCKED_HOSTS = {'localhost', '127.0.0.1', '0.0.0.0', '169.254.169.254', '::1'}
+BLOCKED_HOSTS = {'localhost', 'localhost.localdomain', '127.0.0.1', '0.0.0.0', '0', '169.254.169.254', '::1'}
 
 
 def is_safe_url(url):
@@ -39,7 +39,10 @@ def is_safe_url(url):
             log(f"Blocked URL with invalid scheme: {url}")
             return False
         # Check for blocked hostnames
-        hostname = parsed.hostname or ''
+        hostname = parsed.hostname
+        if hostname is None:
+            log(f"Blocked URL with missing hostname: {url}")
+            return False
         if hostname.lower() in BLOCKED_HOSTS:
             log(f"Blocked URL with forbidden host: {url}")
             return False
