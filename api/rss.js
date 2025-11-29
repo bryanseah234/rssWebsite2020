@@ -92,8 +92,13 @@ function parseAtom(feed, limit) {
       if (typeof entry.link === 'string') {
         link = entry.link;
       } else if (Array.isArray(entry.link)) {
+        // Find alternate link or first available link
         const alternate = entry.link.find(l => l['@_rel'] === 'alternate' || !l['@_rel']);
-        link = alternate ? (alternate['@_href'] || alternate) : (entry.link[0]['@_href'] || entry.link[0]);
+        if (alternate) {
+          link = alternate['@_href'] || alternate;
+        } else if (entry.link[0]) {
+          link = entry.link[0]['@_href'] || entry.link[0];
+        }
       } else if (entry.link['@_href']) {
         link = entry.link['@_href'];
       }
@@ -135,62 +140,72 @@ async function fetchFeed(feedUrl, limit) {
   
   console.log(`[Fetching] ${feedUrl}`);
   
-  const response = await fetch(feedUrl, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
-      'Accept': 'application/rss+xml, application/xml, application/atom+xml, text/xml, */*'
-    },
-    signal: AbortSignal.timeout(15000) // 15 second timeout
-  });
+  // Create abort controller for timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-  }
-  
-  const xml = await response.text();
-  
-  const parser = new XMLParser({
-    ignoreAttributes: false,
-    attributeNamePrefix: '@_'
-  });
-  
-  const feed = parser.parse(xml);
-  
-  let result;
-  
-  // Detect feed type and parse accordingly
-  if (feed.rss) {
-    result = parseRss2(feed, limit);
-  } else if (feed.feed) {
-    result = parseAtom(feed, limit);
-  } else if (feed['rdf:RDF']) {
-    // RSS 1.0 / RDF format
-    const rdf = feed['rdf:RDF'];
-    const title = rdf.channel?.title || 'Unknown Feed';
-    let items = rdf.item || [];
-    if (!Array.isArray(items)) items = [items];
+  try {
+    const response = await fetch(feedUrl, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
+        'Accept': 'application/rss+xml, application/xml, application/atom+xml, text/xml, */*'
+      },
+      signal: controller.signal
+    });
     
-    result = {
-      title,
-      items: items.slice(0, limit).map(item => ({
-        title: stripHtml(item.title || 'No title'),
-        link: item.link || '',
-        pubDate: parseDate(item['dc:date'] || item.pubDate),
-        text: stripHtml(item.description || '')
-      }))
-    };
-  } else {
-    throw new Error('Unknown feed format');
+    clearTimeout(timeoutId);
+  
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+  
+    const xml = await response.text();
+  
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_'
+    });
+  
+    const feed = parser.parse(xml);
+  
+    let result;
+  
+    // Detect feed type and parse accordingly
+    if (feed.rss) {
+      result = parseRss2(feed, limit);
+    } else if (feed.feed) {
+      result = parseAtom(feed, limit);
+    } else if (feed['rdf:RDF']) {
+      // RSS 1.0 / RDF format
+      const rdf = feed['rdf:RDF'];
+      const title = rdf.channel?.title || 'Unknown Feed';
+      let items = rdf.item || [];
+      if (!Array.isArray(items)) items = [items];
+    
+      result = {
+        title,
+        items: items.slice(0, limit).map(item => ({
+          title: stripHtml(item.title || 'No title'),
+          link: item.link || '',
+          pubDate: parseDate(item['dc:date'] || item.pubDate),
+          text: stripHtml(item.description || '')
+        }))
+      };
+    } else {
+      throw new Error('Unknown feed format');
+    }
+  
+    // Update cache
+    cache.set(cacheKey, {
+      timestamp: Date.now(),
+      data: result
+    });
+  
+    console.log(`[Parsed] ${feedUrl} - ${result.items.length} items`);
+    return result;
+  } finally {
+    clearTimeout(timeoutId);
   }
-  
-  // Update cache
-  cache.set(cacheKey, {
-    timestamp: Date.now(),
-    data: result
-  });
-  
-  console.log(`[Parsed] ${feedUrl} - ${result.items.length} items`);
-  return result;
 }
 
 /**

@@ -72,6 +72,7 @@
     let allFeedCards = [];
     let loadedFeeds = 0;
     let totalFeeds = 0;
+    const feedSearchData = new Map(); // Store search data separately from DOM
 
     /**
      * Format date to relative time
@@ -181,8 +182,8 @@
         </li>
       `).join('');
       
-      // Store items for search
-      card.dataset.items = JSON.stringify(data.items.map(i => 
+      // Store items for search in Map (not DOM)
+      feedSearchData.set(card, data.items.map(i => 
         `${i.title} ${i.text}`.toLowerCase()
       ));
     }
@@ -279,7 +280,7 @@
         }
         
         const name = card.dataset.name || '';
-        const items = card.dataset.items ? JSON.parse(card.dataset.items) : [];
+        const items = feedSearchData.get(card) || [];
         
         const matchesName = name.includes(lowerQuery);
         const matchesItems = items.some(item => item.includes(lowerQuery));
