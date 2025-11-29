@@ -9,34 +9,59 @@
     <body>
         <div class="page-header">
             <h1>Prawn Dashboard</h1>
+            <div class="debug-info">
+                <small>Sections: {{ config.sections|length }} | Subreddits: {{ config.subreddits|length }}</small>
+            </div>
         </div>
 
         <div class="container">
+            {% if config.sections|length == 0 and reddit_data|length == 0 %}
+                <div class="error-banner">
+                    <h2>⚠️ No data loaded</h2>
+                    <p>Configuration file may be missing or empty.</p>
+                    <a href="/debug">View Debug Info</a>
+                </div>
+            {% endif %}
+
             <div class="grid">
                 <!-- RSS Feed Sections -->
                 {% for section in config.sections %}
                     {% for feed in section.feeds %}
-                        <div class="widget">
+                        <div class="widget" data-feed="{{ feed.name }}">
                             <div class="widget-header">
                                 <h3>{{ feed.name }}</h3>
                                 <span class="widget-badge">{{ section.title }}</span>
                             </div>
                             <div class="widget-content">
                                 {% if feed.items %}
-                                    <ul class="feed-list">
-                                        {% for item in feed.items %}
-                                            <li class="feed-item">
-                                                <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                                    <div class="feed-title">{{ item.title }}</div>
-                                                    {% if item.published %}
-                                                        <div class="feed-time">{{ item.published }}</div>
-                                                    {% endif %}
-                                                </a>
-                                            </li>
-                                        {% endfor %}
-                                    </ul>
+                                    {% if feed.items|length > 0 %}
+                                        <ul class="feed-list">
+                                            {% for item in feed.items %}
+                                                <li class="feed-item">
+                                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                                        <div class="feed-title">{{ item.title }}</div>
+                                                        {% if item.published %}
+                                                            <div class="feed-time">{{ item.published }}</div>
+                                                        {% endif %}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                        <div class="widget-footer">
+                                            <small>Loaded {{ feed.items|length }} items</small>
+                                        </div>
+                                    {% else %}
+                                        <div class="empty-state">
+                                            <span class="status-icon">⏳</span>
+                                            <p>No items found</p>
+                                        </div>
+                                    {% endif %}
                                 {% else %}
-                                    <div class="empty-state">No items available</div>
+                                    <div class="empty-state error">
+                                        <span class="status-icon">❌</span>
+                                        <p>Failed to load feed</p>
+                                        <small>{{ feed.url }}</small>
+                                    </div>
                                 {% endif %}
                             </div>
                         </div>
@@ -45,33 +70,60 @@
 
                 <!-- Reddit Sections -->
                 {% for reddit in reddit_data %}
-                    <div class="widget">
+                    <div class="widget" data-reddit="{{ reddit.name }}">
                         <div class="widget-header">
                             <h3>{{ reddit.name }}</h3>
                             <span class="widget-badge">Reddit</span>
                         </div>
                         <div class="widget-content">
-                            <ul class="feed-list">
-                                {% for post in reddit.posts %}
-                                    <li class="feed-item">
-                                        <a href="{{ post.link }}" target="_blank" rel="noopener">
-                                            <div class="feed-title">{{ post.title }}</div>
-                                            <div class="feed-meta">
-                                                <span class="upvotes">↑ {{ post.score }}</span>
-                                                <span class="comments">💬 {{ post.comments }}</span>
-                                            </div>
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
+                            {% if reddit.posts|length > 0 %}
+                                <ul class="feed-list">
+                                    {% for post in reddit.posts %}
+                                        <li class="feed-item">
+                                            <a href="{{ post.link }}" target="_blank" rel="noopener">
+                                                <div class="feed-title">{{ post.title }}</div>
+                                                <div class="feed-meta">
+                                                    <span class="upvotes">↑ {{ post.score }}</span>
+                                                    <span class="comments">💬 {{ post.comments }}</span>
+                                                </div>
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                                <div class="widget-footer">
+                                    <small>Loaded {{ reddit.posts|length }} posts</small>
+                                </div>
+                            {% else %}
+                                <div class="empty-state error">
+                                    <span class="status-icon">❌</span>
+                                    <p>Failed to load subreddit</p>
+                                </div>
+                            {% endif %}
                         </div>
                     </div>
                 {% endfor %}
             </div>
         </div>
 
+        <div class="footer">
+            <a href="/debug">Debug Info</a> | 
+            <a href="/health">Health Check</a>
+        </div>
+
         <script>
-            // Optional: Collapsible widgets
+            console.log('Dashboard loaded');
+            console.log('Sections:', {{ config.sections|length }});
+            console.log('Reddit feeds:', {{ reddit_data|length }});
+            
+            // Log widget status
+            document.querySelectorAll('.widget').forEach(widget => {
+                const name = widget.dataset.feed || widget.dataset.reddit;
+                const items = widget.querySelectorAll('.feed-item').length;
+                const hasError = widget.querySelector('.empty-state.error');
+                console.log(`Widget "${name}": ${items} items, Error: ${!!hasError}`);
+            });
+
+            // Collapsible widgets
             document.querySelectorAll('.widget-header').forEach(header => {
                 header.addEventListener('click', function() {
                     const widget = this.closest('.widget');
