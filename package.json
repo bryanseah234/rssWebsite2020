@@ -1,0 +1,16 @@
+{
+  "name": "rss-reader",
+  "version": "1.0.0",
+  "description": "A mobile-responsive dark-themed RSS reader webapp",
+  "private": true,
+  "scripts": {
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "fast-xml-parser": "^4.5.3",
+    "sanitize-html": "^2.15.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

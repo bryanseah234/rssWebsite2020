@@ -1,4 +1,5 @@
 from flask import Flask, render_template, jsonify
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import json
 import os
 import sys
@@ -8,6 +9,13 @@ app = Flask(__name__, template_folder='templates')
 
 # Enable debug logging
 app.config['DEBUG'] = True
+
+# Parallel fetching configuration
+PARALLEL_TIMEOUT = 8  # Overall timeout for parallel operations in seconds
+RSS_MAX_WORKERS = 15  # Max concurrent RSS feed fetches
+REDDIT_MAX_WORKERS = 6  # Max concurrent Reddit fetches
+YOUTUBE_MAX_WORKERS = 6  # Max concurrent YouTube fetches
+TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
 
 
 def log(message):
@@ -52,7 +60,7 @@ def fetch_rss_feed(url, limit=5):
             'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
             'Accept': 'application/rss+xml, application/xml, text/xml'
         }
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         log(f"RSS fetch successful: {url} (status: {response.status_code})")
 
@@ -117,7 +125,7 @@ def fetch_reddit(subreddit, limit=5):
 
         url = f'https://www.reddit.com/r/{subreddit}/top.json?limit={limit}&t=day'
         headers = {'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)'}
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=5)
         response.raise_for_status()
         data = response.json()
 
@@ -141,6 +149,145 @@ def fetch_reddit(subreddit, limit=5):
         return []
 
 
+def fetch_youtube(channel_id, channel_name, limit=3):
+    """Fetch YouTube channel videos via RSS feed (text-only)"""
+    try:
+        log(f"Fetching YouTube: {channel_name} ({channel_id})")
+        import feedparser
+        import requests
+        from datetime import datetime
+        from dateutil import parser as date_parser
+
+        url = f'https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}'
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
+            'Accept': 'application/xml, text/xml'
+        }
+        response = requests.get(url, headers=headers, timeout=5)
+        response.raise_for_status()
+        log(f"YouTube fetch successful: {channel_name}")
+
+        feed = feedparser.parse(response.content)
+        log(f"Parsed {len(feed.entries)} entries from YouTube channel {channel_name}")
+
+        videos = []
+        for entry in feed.entries[:limit]:
+            published = entry.get('published', entry.get('updated', ''))
+            try:
+                if published:
+                    dt = date_parser.parse(published)
+                    time_ago = get_time_ago(dt)
+                else:
+                    time_ago = ''
+            except Exception as e:
+                log(f"Error parsing date: {e}")
+                time_ago = ''
+
+            videos.append({
+                'title': entry.get('title', 'No title')[:150],
+                'link': entry.get('link', '#'),
+                'published': time_ago
+            })
+
+        log(f"Returning {len(videos)} videos from {channel_name}")
+        return videos
+    except Exception as e:
+        log(f"ERROR fetching YouTube {channel_name}: {e}")
+        log(traceback.format_exc())
+        return []
+
+
+def fetch_twitch_status(channel_name):
+    """Fetch Twitch live status using GraphQL API (no OAuth required)"""
+    try:
+        log(f"Fetching Twitch status: {channel_name}")
+        import requests
+
+        # Public Client-ID used by Twitch web (same method as Glance)
+        client_id = 'kimne78kx3ncx6brgo4mv6wki5h1ko'
+
+        query = """
+        query GetStreamInfo($login: String!) {
+            user(login: $login) {
+                displayName
+                login
+                stream {
+                    title
+                    viewersCount
+                    game {
+                        name
+                    }
+                }
+            }
+        }
+        """
+
+        headers = {
+            'Client-ID': client_id,
+            'Content-Type': 'application/json',
+        }
+
+        payload = {
+            'query': query,
+            'variables': {'login': channel_name.lower()}
+        }
+
+        response = requests.post(
+            'https://gql.twitch.tv/gql',
+            headers=headers,
+            json=payload,
+            timeout=5
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        log(f"Twitch fetch successful: {channel_name}")
+
+        user_data = data.get('data', {}).get('user')
+        if not user_data:
+            log(f"Twitch user not found: {channel_name}")
+            return {
+                'name': channel_name,
+                'display_name': channel_name,
+                'is_live': False,
+                'game': '',
+                'viewers': 0,
+                'title': ''
+            }
+
+        stream = user_data.get('stream')
+        if stream:
+            game = stream.get('game', {}) or {}
+            return {
+                'name': user_data.get('login', channel_name),
+                'display_name': user_data.get('displayName', channel_name),
+                'is_live': True,
+                'game': game.get('name', ''),
+                'viewers': stream.get('viewersCount', 0),
+                'title': stream.get('title', '')[:100]
+            }
+        return {
+            'name': user_data.get('login', channel_name),
+            'display_name': user_data.get('displayName', channel_name),
+            'is_live': False,
+            'game': '',
+            'viewers': 0,
+            'title': ''
+        }
+    except Exception as e:
+        log(f"ERROR fetching Twitch {channel_name}: {e}")
+        log(traceback.format_exc())
+        return {
+            'name': channel_name,
+            'display_name': channel_name,
+            'is_live': False,
+            'game': '',
+            'viewers': 0,
+            'title': '',
+            'error': True
+        }
+
+
 @app.after_request
 def add_header(response):
     response.headers["Cache-Control"] = "public, max-age=300"
@@ -156,49 +303,157 @@ def root():
         config = load_feeds_config()
         log(f"Config loaded. Sections: {len(config.get('sections', []))}")
 
-        # Fetch feeds (limit to prevent timeout)
-        max_feeds = 10
-        feed_count = 0
-
         sections = config.get('sections', [])
         log(f"Processing {len(sections)} sections")
 
-        for idx, section in enumerate(sections):
-            log(f"Processing section {idx + 1}: {section.get('title', 'Untitled')}")
+        # Collect all feeds with section and index info for parallel fetching
+        all_feeds = []
+        for section_idx, section in enumerate(sections):
             feeds = section.get('feeds', [])
-            log(f"Section has {len(feeds)} feeds")
-
             for feed_idx, feed in enumerate(feeds):
-                log(f"Processing feed {feed_idx + 1}: {feed.get('name', 'Unnamed')}")
-
-                if feed_count >= max_feeds:
-                    log(f"Reached max feeds limit ({max_feeds}), skipping remaining")
-                    feed['items'] = []
-                    continue
-
-                feed['items'] = fetch_rss_feed(
-                    feed['url'], feed.get('limit', 5))
-                feed_count += 1
-
-        log(f"Processed {feed_count} feeds total")
-
-        # Fetch Reddit (limit to 2 subreddits)
-        reddit_data = []
-        subreddits = config.get('subreddits', [])[:2]
-        log(f"Processing {len(subreddits)} subreddits")
-
-        for subreddit in subreddits:
-            posts = fetch_reddit(subreddit, 5)
-            if posts:
-                reddit_data.append({
-                    'name': f'r/{subreddit}',
-                    'posts': posts
+                all_feeds.append({
+                    'section_idx': section_idx,
+                    'feed_idx': feed_idx,
+                    'feed': feed
                 })
 
+        log(f"Total feeds to fetch: {len(all_feeds)}")
+
+        # Fetch all RSS feeds in parallel
+        with ThreadPoolExecutor(max_workers=RSS_MAX_WORKERS) as executor:
+            future_to_feed = {
+                executor.submit(
+                    fetch_rss_feed,
+                    f['feed']['url'],
+                    f['feed'].get('limit', 5)
+                ): f for f in all_feeds
+            }
+
+            try:
+                for future in as_completed(future_to_feed, timeout=PARALLEL_TIMEOUT):
+                    feed_info = future_to_feed[future]
+                    try:
+                        items = future.result()
+                        sections[feed_info['section_idx']
+                                 ]['feeds'][feed_info['feed_idx']]['items'] = items
+                    except Exception as e:
+                        log(f"Error fetching {feed_info['feed']['url']}: {e}")
+                        sections[feed_info['section_idx']
+                                 ]['feeds'][feed_info['feed_idx']]['items'] = []
+            except TimeoutError:
+                log(
+                    f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
+
+        log(f"Processed {len(all_feeds)} feeds total")
+
+        # Fetch all subreddits in parallel
+        reddit_data = []
+        subreddits = config.get('subreddits', [])
+        log(f"Processing {len(subreddits)} subreddits")
+
+        with ThreadPoolExecutor(max_workers=REDDIT_MAX_WORKERS) as executor:
+
+            completed = set()
+            for future in as_completed(future_to_subreddit, timeout=PARALLEL_TIMEOUT):
+                completed.add(future)
+                subreddit = future_to_subreddit[future]
+                try:
+                    posts = future.result()
+                    if posts:
+                        reddit_data.append({
+                            'name': f'r/{subreddit}',
+                            'posts': posts
+                        })
+                except Exception as e:
+                    log(f"Error fetching r/{subreddit}: {e}")
+
+            # Cancel and record timeouts
+            for future, subreddit in future_to_subreddit.items():
+                if future not in completed:
+                    future.cancel()
+                    log(f"Reddit fetch timed out: r/{subreddit}")
+                            'posts': posts
+                        })
+                except Exception as e:
+                    log(f"Error fetching r/{subreddit}: {e}")
+
         log(f"Fetched data from {len(reddit_data)} subreddits")
+
+        # Fetch all YouTube channels in parallel
+        youtube_data = []
+        youtube_channels = config.get('youtube_channels', [])
+        log(f"Processing {len(youtube_channels)} YouTube channels")
+
+        with ThreadPoolExecutor(max_workers=YOUTUBE_MAX_WORKERS) as executor:
+            future_to_channel = {
+                executor.submit(
+                    fetch_youtube,
+                    channel.get('channel_id'),
+                    channel.get('name'),
+                    channel.get('limit', 3)
+                ): channel for channel in youtube_channels
+            }
+
+            for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
+                channel = future_to_channel[future]
+                try:
+                    videos = future.result()
+                    youtube_data.append({
+                        'name': channel.get('name'),
+                        'category': channel.get('category', 'General'),
+                        'videos': videos,
+                        'error': len(videos) == 0
+                    })
+                except Exception as e:
+                    log(f"Error fetching YouTube {channel.get('name')}: {e}")
+                    youtube_data.append({
+                        'name': channel.get('name'),
+                        'category': channel.get('category', 'General'),
+                        'videos': [],
+                        'error': True
+                    })
+
+        log(f"Fetched data from {len(youtube_data)} YouTube channels")
+
+        # Fetch all Twitch channels in parallel
+        twitch_data = []
+        twitch_channels = config.get('twitch_channels', [])
+        log(f"Processing {len(twitch_channels)} Twitch channels")
+
+        with ThreadPoolExecutor(max_workers=TWITCH_MAX_WORKERS) as executor:
+            future_to_channel = {
+                executor.submit(fetch_twitch_status, channel): channel
+                for channel in twitch_channels
+            }
+
+            for future in as_completed(future_to_channel, timeout=PARALLEL_TIMEOUT):
+                channel = future_to_channel[future]
+                try:
+                    status = future.result()
+                    twitch_data.append(status)
+                except Exception as e:
+                    log(f"Error fetching Twitch {channel}: {e}")
+                    twitch_data.append({
+                        'name': channel,
+                        'display_name': channel,
+                        'is_live': False,
+                        'game': '',
+                        'viewers': 0,
+                        'title': '',
+                        'error': True
+                    })
+
+        log(f"Fetched status from {len(twitch_data)} Twitch channels")
+
         log("=== Rendering template ===")
 
-        return render_template('index.html', config=config, reddit_data=reddit_data)
+        return render_template(
+            'index.html',
+            config=config,
+            reddit_data=reddit_data,
+            youtube_data=youtube_data,
+            twitch_data=twitch_data
+        )
 
     except Exception as e:
         log(f"CRITICAL ERROR in root route: {e}")
