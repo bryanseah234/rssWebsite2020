@@ -1,139 +1,51 @@
 {
   "sections": [
     {
-      "title": "NEWS UPDATES",
+      "title": "Blogs",
       "feeds": [
-        {
-          "name": "Channel News Asia",
-          "url": "https://www.channelnewsasia.com/rssfeeds/8395986",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "Southern China Morning Post",
-          "url": "https://www.scmp.com/rss/91/feed",
-          "size": "half",
-          "container": "container2"
-        },
-        {
-          "name": "Mothership",
-          "url": "https://mothership.sg/feed/",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "Today Online",
-          "url": "https://www.todayonline.com/hot-news/feed",
-          "size": "half",
-          "container": "container2"
-        },
-        {
-          "name": "The Atlantic",
-          "url": "https://politepol.com/fd/s0oDjbTHXtZE",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "CNN",
-          "url": "http://rss.cnn.com/rss/edition.rss",
-          "size": "half",
-          "container": "container2"
-        },
-        {
-          "name": "BBC",
-          "url": "http://feeds.bbci.co.uk/news/world/rss.xml",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "WIRED",
-          "url": "https://politepol.com/fd/28zLEW8U4bd6",
-          "size": "half",
-          "container": "container2"
-        },
-        {
-          "name": "VOX",
-          "url": "https://www.vox.com/rss/world/index.xml",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "Washington Post",
-          "url": "http://feeds.washingtonpost.com/rss/world",
-          "size": "half",
-          "container": "container2"
-        },
-        {
-          "name": "XDA Developers",
-          "url": "https://politepol.com/fd/hEZ7QIfZfNcw",
-          "size": "full",
-          "container": "container3"
-        },
-        {
-          "name": "MacRumors",
-          "url": "http://feeds.macrumors.com/MacRumors-Front",
-          "size": "full",
-          "container": "container3"
-        },
-        {
-          "name": "Engadget",
-          "url": "https://www.engadget.com/rss.xml",
-          "size": "full",
-          "container": "container3"
-        },
-        {
-          "name": "9to5Mac",
-          "url": "https://9to5mac.com/feed/",
-          "size": "full",
-          "container": "container3"
-        },
-        {
-          "name": "Apple Insider",
-          "url": "https://appleinsider.com/rss/news",
-          "size": "full",
-          "container": "container3"
-        }
+        {"name": "Quinncheong", "url": "https://quinncheong.com/feed.xml", "limit": 3},
+        {"name": "Guan Jie", "url": "https://guanjiefung.com/feed/", "limit": 3},
+        {"name": "Raymond Yeh", "url": "https://geek.sg/rss", "limit": 3},
+        {"name": "daniel", "url": "https://daniel.haxx.se/blog/feed/", "limit": 3},
+        {"name": "awakened1712", "url": "https://awakened1712.github.io/feed.xml", "limit": 3},
+        {"name": "chooyikai", "url": "https://chooyikai.github.io/feed.xml", "limit": 3},
+        {"name": "Spaceraccoon", "url": "https://spaceraccoon.dev/posts/feed.xml", "limit": 3},
+        {"name": "Rob Mensching", "url": "https://robmensching.com/blog/rss.xml", "limit": 3},
+        {"name": "Ali", "url": "https://blog.ali.dev/index.xml", "limit": 3},
+        {"name": "maia", "url": "https://maia.crimew.gay/feed.xml", "limit": 3},
+        {"name": "chewingwrite", "url": "https://chewingwrite.wordpress.com/feed/", "limit": 3},
+        {"name": "Making Building Stuff", "url": "https://makingbuildingstuff.blogspot.com/feeds/posts/default?alt=rss", "limit": 3},
+        {"name": "eva", "url": "https://kibty.town/blog.rss", "limit": 3},
+        {"name": "MrBruh", "url": "https://mrbruh.com/index.xml", "limit": 3},
+        {"name": "Hillel Wayne", "url": "https://www.hillelwayne.com/index.xml", "limit": 3},
+        {"name": "Bounded Rationality", "url": "https://bjlkeng.io//rss.xml", "limit": 3},
+        {"name": "On my Om", "url": "https://om.co/feed/", "limit": 3}
       ]
     },
     {
-      "title": "HUMOUR UPDATES",
+      "title": "Security & Tech News",
       "feeds": [
-        {
-          "name": "Bored Panda",
-          "url": "https://politepol.com/fd/gId0qd6gWNpd",
-          "size": "full",
-          "container": "container3"
-        }
-      ]
-    },
-    {
-      "title": "YOUTUBE UPDATES",
-      "feeds": [
-        {
-          "name": "EverythingApplePro",
-          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCj34AOIMl_k1fF7hcBkD_dw",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "Brandon Butch",
-          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCpZy-Hfqcxf-R7nQzlv9Bvw",
-          "size": "half",
-          "container": "container2"
-        },
-        {
-          "name": "Later Clips",
-          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCtVGGeUqfVHOK4Q6nAwYO3g",
-          "size": "half",
-          "container": "container1"
-        },
-        {
-          "name": "Late Late Show with James Corden",
-          "url": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJ0uqCI0Vqr2Rrt1HseGirg",
-          "size": "half",
-          "container": "container2"
-        }
+        {"name": "Hackread", "url": "https://hackread.com/feed/", "limit": 5},
+        {"name": "Check Point Research", "url": "https://research.checkpoint.com/feed", "limit": 5},
+        {"name": "ZERO DAY", "url": "https://www.zetter-zeroday.com/rss/", "limit": 5},
+        {"name": "Unit 42", "url": "https://unit42.paloaltonetworks.com/category/top-cyberthreats/feed/", "limit": 5},
+        {"name": "Microsoft", "url": "https://blogs.microsoft.com/on-the-issues/feed/", "limit": 5},
+        {"name": "Hive Mind Security", "url": "https://hivemindsecurity.com/blog?format=rss", "limit": 5},
+        {"name": "Zack Whittaker", "url": "https://techcrunch.com/author/zack-whittaker/feed/", "limit": 5},
+        {"name": "Labs Detectify", "url": "https://labs.detectify.com/feed", "limit": 5},
+        {"name": "Schneier on Security", "url": "https://www.schneier.com/feed/", "limit": 5},
+        {"name": "Sector035", "url": "https://sector035.nl/articles.rss", "limit": 5},
+        {"name": "The Blue and Gold", "url": "https://www.theblueandgold.sg/blog-feed.xml", "limit": 5},
+        {"name": "Security Affairs", "url": "https://securityaffairs.com/feed", "limit": 5}
       ]
     }
+  ],
+  "subreddits": [
+    "pwned",
+    "cybersecurity",
+    "iosbeta",
+    "shortcuts",
+    "nostupidquestions",
+    "internetisbeautiful"
   ]
 }
