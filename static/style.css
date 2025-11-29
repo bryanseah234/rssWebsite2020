@@ -106,6 +106,20 @@ body {
     padding: 20px;
 }
 
+/* Feed Section */
+.feed-section {
+    margin-bottom: 2rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #e0e0e0;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
 /* Grid Layout - Masonry Style */
 .grid {
     display: grid;

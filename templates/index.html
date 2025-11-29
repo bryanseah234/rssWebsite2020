@@ -3,14 +3,23 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Prawn Dashboard</title>
+        <title>RSS Dashboard</title>
         <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     </head>
     <body>
         <div class="page-header">
-            <h1>Prawn Dashboard</h1>
+            <h1>RSS Dashboard</h1>
             <div class="debug-info">
-                <small>Sections: {{ config.sections|length }} | Subreddits: {{ config.subreddits|length }} | YouTube: {{ youtube_data|length }} | Twitch: {{ twitch_data|length }}</small>
+                {% set blogs_count = namespace(count=0) %}
+                {% set security_count = namespace(count=0) %}
+                {% for section in config.sections %}
+                    {% if section.title == "Blogs" or "blog" in (section.title|lower) %}
+                        {% set blogs_count.count = blogs_count.count + section.feeds|length %}
+                    {% elif "security" in (section.title|lower) or "tech" in (section.title|lower) %}
+                        {% set security_count.count = security_count.count + section.feeds|length %}
+                    {% endif %}
+                {% endfor %}
+                <small>Blogs: {{ blogs_count.count }} | Security: {{ security_count.count }} | Subreddits: {{ config.subreddits|length }} | YouTube: {{ youtube_data|length }} | Twitch: {{ twitch_data|length }}</small>
             </div>
         </div>
 
@@ -23,159 +32,230 @@
                 </div>
             {% endif %}
 
-            <div class="grid">
-                <!-- Twitch Status Section -->
-                {% if twitch_data|length > 0 %}
-                    <div class="widget twitch-widget" data-twitch="status">
-                        <div class="widget-header">
-                            <h3>Twitch Live Status</h3>
-                            <span class="widget-badge">Twitch</span>
-                        </div>
-                        <div class="widget-content">
-                            <ul class="feed-list">
-                                {% for streamer in twitch_data %}
-                                    <li class="feed-item twitch-item">
-                                        <a href="https://twitch.tv/{{ streamer.name }}" target="_blank" rel="noopener">
-                                            <div class="twitch-status-row">
-                                                <span class="twitch-name">{{ streamer.display_name }}</span>
-                                                {% if streamer.is_live %}
-                                                    <span class="twitch-live-badge">LIVE</span>
-                                                {% else %}
-                                                    <span class="twitch-offline-badge">OFFLINE</span>
-                                                {% endif %}
-                                            </div>
-                                            {% if streamer.is_live %}
-                                                <div class="twitch-details">
-                                                    {% if streamer.game %}
-                                                        <span class="twitch-game">🎮 {{ streamer.game }}</span>
-                                                    {% endif %}
-                                                    <span class="twitch-viewers">👁 {{ "{:,}".format(streamer.viewers) }}</span>
-                                                </div>
-                                            {% endif %}
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                            <div class="widget-footer">
-                                <small>{{ twitch_data|length }} channels</small>
+            <!-- Twitch Section -->
+            <section class="feed-section">
+                <h2 class="section-title">🎮 Twitch Live Status</h2>
+                <div class="grid">
+                    {% if twitch_data|length > 0 %}
+                        <div class="widget twitch-widget" data-twitch="status">
+                            <div class="widget-header">
+                                <h3>Twitch Live Status</h3>
+                                <span class="widget-badge">Twitch</span>
                             </div>
-                        </div>
-                    </div>
-                {% endif %}
-
-                <!-- YouTube Sections -->
-                {% for youtube in youtube_data %}
-                    <div class="widget" data-youtube="{{ youtube.name }}">
-                        <div class="widget-header">
-                            <h3>{{ youtube.name }}</h3>
-                            <span class="widget-badge">YouTube / {{ youtube.category }}</span>
-                        </div>
-                        <div class="widget-content">
-                            {% if youtube.videos|length > 0 %}
+                            <div class="widget-content">
                                 <ul class="feed-list">
-                                    {% for video in youtube.videos %}
-                                        <li class="feed-item">
-                                            <a href="{{ video.link }}" target="_blank" rel="noopener">
-                                                <div class="feed-title">{{ video.title }}</div>
-                                                {% if video.published %}
-                                                    <div class="feed-time">{{ video.published }}</div>
+                                    {% for streamer in twitch_data %}
+                                        <li class="feed-item twitch-item">
+                                            <a href="https://twitch.tv/{{ streamer.name }}" target="_blank" rel="noopener">
+                                                <div class="twitch-status-row">
+                                                    <span class="twitch-name">{{ streamer.display_name }}</span>
+                                                    {% if streamer.is_live %}
+                                                        <span class="twitch-live-badge">LIVE</span>
+                                                    {% else %}
+                                                        <span class="twitch-offline-badge">OFFLINE</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if streamer.is_live %}
+                                                    <div class="twitch-details">
+                                                        {% if streamer.game %}
+                                                            <span class="twitch-game">🎮 {{ streamer.game }}</span>
+                                                        {% endif %}
+                                                        <span class="twitch-viewers">👁 {{ "{:,}".format(streamer.viewers) }}</span>
+                                                    </div>
                                                 {% endif %}
                                             </a>
                                         </li>
                                     {% endfor %}
                                 </ul>
                                 <div class="widget-footer">
-                                    <small>Loaded {{ youtube.videos|length }} videos</small>
+                                    <small>{{ twitch_data|length }} channels</small>
                                 </div>
-                            {% else %}
-                                <div class="empty-state error">
-                                    <span class="status-icon">❌</span>
-                                    <p>Failed to load channel</p>
-                                </div>
-                            {% endif %}
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
+                    {% endif %}
+                </div>
+            </section>
 
-                <!-- RSS Feed Sections -->
-                {% for section in config.sections %}
-                    {% for feed in section.feeds %}
-                        <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
+            <!-- RSS Feed Sections -->
+            {% for section in config.sections %}
+                {% for feed in section.feeds %}
+                    <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
+            <!-- YouTube Section -->
+            <section class="feed-section">
+                <h2 class="section-title">📺 YouTube</h2>
+                <div class="grid">
+                    {% for youtube in youtube_data %}
+                        <div class="widget" data-youtube="{{ youtube.name }}">
                             <div class="widget-header">
-                                <h3>{{ feed.name }}</h3>
-                                <span class="widget-badge">{{ section.title }}</span>
+                                <h3>{{ youtube.name }}</h3>
+                                <span class="widget-badge">YouTube / {{ youtube.category }}</span>
                             </div>
                             <div class="widget-content">
-                                {% if feed['items'] %}
-                                    {% if feed['items']|length > 0 %}
-                                        <ul class="feed-list">
-                                            {% for item in feed['items'] %}
-                                                <li class="feed-item">
-                                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                                        <div class="feed-title">{{ item.title }}</div>
-                                                        {% if item.published %}
-                                                            <div class="feed-time">{{ item.published }}</div>
-                                                        {% endif %}
-                                                    </a>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                        <div class="widget-footer">
-                                            <small>Loaded {{ feed['items']|length }} items</small>
-                                        </div>
-                                    {% else %}
-                                        <div class="empty-state">
-                                            <span class="status-icon">⏳</span>
-                                            <p>No items found</p>
-                                        </div>
-                                    {% endif %}
+                                {% if youtube.videos|length > 0 %}
+                                    <ul class="feed-list">
+                                        {% for video in youtube.videos %}
+                                            <li class="feed-item">
+                                                <a href="{{ video.link }}" target="_blank" rel="noopener">
+                                                    <div class="feed-title">{{ video.title }}</div>
+                                                    {% if video.published %}
+                                                        <div class="feed-time">{{ video.published }}</div>
+                                                    {% endif %}
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <div class="widget-footer">
+                                        <small>Loaded {{ youtube.videos|length }} videos</small>
+                                    </div>
                                 {% else %}
                                     <div class="empty-state error">
                                         <span class="status-icon">❌</span>
-                                        <p>Failed to load feed</p>
-                                        <small>{{ feed.url }}</small>
+                                        <p>Failed to load channel</p>
                                     </div>
                                 {% endif %}
                             </div>
                         </div>
                     {% endfor %}
-                {% endfor %}
+                </div>
+            </section>
 
-                <!-- Reddit Sections -->
-                {% for reddit in reddit_data %}
-                    <div class="widget" data-reddit="{{ reddit.name }}">
-                        <div class="widget-header">
-                            <h3>{{ reddit.name }}</h3>
-                            <span class="widget-badge">Reddit</span>
-                        </div>
-                        <div class="widget-content">
-                            {% if reddit.posts|length > 0 %}
-                                <ul class="feed-list">
-                                    {% for post in reddit.posts %}
-                                        <li class="feed-item">
-                                            <a href="{{ post.link }}" target="_blank" rel="noopener">
-                                                <div class="feed-title">{{ post.title }}</div>
-                                                <div class="feed-meta">
-                                                    <span class="upvotes">↑ {{ post.score }}</span>
-                                                    <span class="comments">💬 {{ post.comments }}</span>
-                                                </div>
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                                <div class="widget-footer">
-                                    <small>Loaded {{ reddit.posts|length }} posts</small>
+            <!-- Blogs Section -->
+            <section class="feed-section">
+                <h2 class="section-title">📝 Blogs</h2>
+                <div class="grid">
+                    {% for section in config.sections if section.title == "Blogs" or "blog" in (section.title|lower) %}
+                        {% for feed in section.feeds %}
+                            <div class="widget" data-feed="{{ feed.name }}">
+                                <div class="widget-header">
+                                    <h3>{{ feed.name }}</h3>
+                                    <span class="widget-badge">{{ section.title }}</span>
                                 </div>
-                            {% else %}
-                                <div class="empty-state error">
-                                    <span class="status-icon">❌</span>
-                                    <p>Failed to load subreddit</p>
+                                <div class="widget-content">
+                                    {% if feed['items'] %}
+                                        {% if feed['items']|length > 0 %}
+                                            <ul class="feed-list">
+                                                {% for item in feed['items'] %}
+                                                    <li class="feed-item">
+                                                        <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                                            <div class="feed-title">{{ item.title }}</div>
+                                                            {% if item.published %}
+                                                                <div class="feed-time">{{ item.published }}</div>
+                                                            {% endif %}
+                                                        </a>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                            <div class="widget-footer">
+                                                <small>Loaded {{ feed['items']|length }} items</small>
+                                            </div>
+                                        {% else %}
+                                            <div class="empty-state">
+                                                <span class="status-icon">⏳</span>
+                                                <p>No items found</p>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="empty-state error">
+                                            <span class="status-icon">❌</span>
+                                            <p>Failed to load feed</p>
+                                            <small>{{ feed.url }}</small>
+                                        </div>
+                                    {% endif %}
                                 </div>
-                            {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Security & Tech Section -->
+            <section class="feed-section">
+                <h2 class="section-title">🔒 Security & Tech</h2>
+                <div class="grid">
+                    {% for section in config.sections if "security" in (section.title|lower) or "tech" in (section.title|lower) %}
+                        {% for feed in section.feeds %}
+                            <div class="widget" data-feed="{{ feed.name }}">
+                                <div class="widget-header">
+                                    <h3>{{ feed.name }}</h3>
+                                    <span class="widget-badge">{{ section.title }}</span>
+                                </div>
+                                <div class="widget-content">
+                                    {% if feed['items'] %}
+                                        {% if feed['items']|length > 0 %}
+                                            <ul class="feed-list">
+                                                {% for item in feed['items'] %}
+                                                    <li class="feed-item">
+                                                        <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                                            <div class="feed-title">{{ item.title }}</div>
+                                                            {% if item.published %}
+                                                                <div class="feed-time">{{ item.published }}</div>
+                                                            {% endif %}
+                                                        </a>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                            <div class="widget-footer">
+                                                <small>Loaded {{ feed['items']|length }} items</small>
+                                            </div>
+                                        {% else %}
+                                            <div class="empty-state">
+                                                <span class="status-icon">⏳</span>
+                                                <p>No items found</p>
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        <div class="empty-state error">
+                                            <span class="status-icon">❌</span>
+                                            <p>Failed to load feed</p>
+                                            <small>{{ feed.url }}</small>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </section>
+
+            <!-- Reddit Section -->
+            <section class="feed-section">
+                <h2 class="section-title">🔗 Reddit</h2>
+                <div class="grid">
+                    {% for reddit in reddit_data %}
+                        <div class="widget" data-reddit="{{ reddit.name }}">
+                            <div class="widget-header">
+                                <h3>{{ reddit.name }}</h3>
+                                <span class="widget-badge">Reddit</span>
+                            </div>
+                            <div class="widget-content">
+                                {% if reddit.posts|length > 0 %}
+                                    <ul class="feed-list">
+                                        {% for post in reddit.posts %}
+                                            <li class="feed-item">
+                                                <a href="{{ post.link }}" target="_blank" rel="noopener">
+                                                    <div class="feed-title">{{ post.title }}</div>
+                                                    <div class="feed-meta">
+                                                        <span class="upvotes">↑ {{ post.score }}</span>
+                                                        <span class="comments">💬 {{ post.comments }}</span>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                    <div class="widget-footer">
+                                        <small>Loaded {{ reddit.posts|length }} posts</small>
+                                    </div>
+                                {% else %}
+                                    <div class="empty-state error">
+                                        <span class="status-icon">❌</span>
+                                        <p>Failed to load subreddit</p>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
+                    {% endfor %}
+                </div>
+            </section>
         </div>
 
         <div class="footer">
