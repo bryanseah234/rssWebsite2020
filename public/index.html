@@ -62,10 +62,8 @@
     const API_ENDPOINT = '/api/rss';
 
     // State
-    let allFeedCards = [];
     let loadedFeeds = 0;
     let totalFeeds = 0;
-    const feedSearchData = new Map(); // Store search data separately from DOM
 
     /**
      * Format date to relative time
@@ -174,11 +172,6 @@
           </a>
         </li>
       `).join('');
-      
-      // Store items for search in Map (not DOM)
-      feedSearchData.set(card, data.items.map(i => 
-        `${i.title} ${i.text}`.toLowerCase()
-      ));
     }
 
     /**
@@ -260,49 +253,6 @@
     }
 
     /**
-     * Filter feeds based on search query
-     * @param {string} query - Search query
-     */
-    function filterFeeds(query) {
-      const lowerQuery = query.toLowerCase().trim();
-      
-      allFeedCards.forEach(card => {
-        if (!lowerQuery) {
-          card.classList.remove('hidden');
-          return;
-        }
-        
-        const name = card.dataset.name || '';
-        const items = feedSearchData.get(card) || [];
-        
-        const matchesName = name.includes(lowerQuery);
-        const matchesItems = items.some(item => item.includes(lowerQuery));
-        
-        if (matchesName || matchesItems) {
-          card.classList.remove('hidden');
-        } else {
-          card.classList.add('hidden');
-        }
-      });
-      
-      // Update section visibility
-      ['blogs', 'security'].forEach(section => {
-        const grid = document.getElementById(`${section}-grid`);
-        const visibleCards = grid.querySelectorAll('.feed-card:not(.hidden)');
-        const sectionEl = document.getElementById(`${section}-section`);
-        
-        if (visibleCards.length === 0 && lowerQuery) {
-          sectionEl.style.display = 'none';
-        } else {
-          sectionEl.style.display = 'block';
-        }
-        
-        // Update count badge
-        document.getElementById(`${section}-count`).textContent = visibleCards.length;
-      });
-    }
-
-    /**
      * Initialize the app
      */
     async function init() {
@@ -320,7 +270,6 @@
         FEEDS.blogs.forEach(feed => {
           const card = createFeedCard(feed.name, 'blogs');
           blogsGrid.appendChild(card);
-          allFeedCards.push(card);
           feedConfigs.push({ feed, card });
         });
       }
@@ -331,7 +280,6 @@
         FEEDS.security.forEach(feed => {
           const card = createFeedCard(feed.name, 'security');
           securityGrid.appendChild(card);
-          allFeedCards.push(card);
           feedConfigs.push({ feed, card });
         });
       }
