@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A modern, mobile-responsive RSS reader">
-  <title>RSS Reader</title>
+  <meta name="description" content="A modern, mobile-responsive RSS dashboard">
+  <title>RSS Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,24 +24,11 @@
             <path d="M4 4a16 16 0 0 1 16 16"></path>
             <circle cx="5" cy="19" r="1"></circle>
           </svg>
-          <h1>RSS Reader</h1>
+          <h1>RSS Dashboard</h1>
         </div>
         <div class="header-stats">
           <span id="feed-count">Loading feeds...</span>
         </div>
-      </div>
-      <div class="search-container">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <path d="m21 21-4.35-4.35"></path>
-        </svg>
-        <input 
-          type="text" 
-          class="search-input" 
-          id="search-input" 
-          placeholder="Search feeds and articles..." 
-          autocomplete="off"
-        >
       </div>
     </div>
   </header>
@@ -65,7 +52,7 @@
   </main>
 
   <footer class="footer">
-    <p>RSS Reader &copy; <span id="year"></span> | Powered by Vercel</p>
+    <p>RSS Dashboard &copy; <span id="year"></span> | Powered by Vercel</p>
   </footer>
 
   <script src="/feeds.js"></script>
@@ -352,20 +339,10 @@
       totalFeeds = feedConfigs.length;
       updateFeedCount();
       
-      // Set up search
-      const searchInput = document.getElementById('search-input');
-      let debounceTimer;
-      searchInput.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          filterFeeds(e.target.value);
-        }, 200);
-      });
-      
       // Fetch all feeds with concurrency limit
       await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
       
-      console.log(`[RSS Reader] Loaded ${loadedFeeds} feeds`);
+      console.log(`[RSS Dashboard] Loaded ${loadedFeeds} feeds`);
     }
 
     // Start the app
