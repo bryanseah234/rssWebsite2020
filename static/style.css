@@ -1,6 +1,7 @@
 @charset "utf-8";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
+/* Light theme (default) */
 :root {
     /* Glance-inspired neutral color system */
     --background: #F6F7F9;
@@ -18,6 +19,7 @@
     --accent-teal: #2DD4BF;
     --accent-amber: #F59E0B;
     --accent-red: #EF4444;
+    --accent-purple: #9146FF;
     
     /* Typography scale */
     --font-size-xs: 10px;
@@ -35,6 +37,21 @@
     --radius-card: 12px;
     --padding-card: 18px;
     --gutter: 16px;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+    --background: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface-hover: #252525;
+    --border: #2a2a2a;
+    
+    --text-primary: #f0f0f0;
+    --text-secondary: #c0c0c0;
+    --text-tertiary: #888888;
+    
+    --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-medium: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 * { 
@@ -65,23 +82,67 @@ body {
     top: 0;
     z-index: 100;
     padding: 16px 20px;
-    text-align: center;
     background: var(--surface);
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow-soft);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 .page-header h1 {
     font-size: var(--font-size-xl);
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 4px 0;
+    margin: 0;
     letter-spacing: -0.3px;
+}
+
+/* Theme Toggle */
+.theme-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--background);
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+}
+
+.theme-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-tertiary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+.theme-btn.active {
+    background: var(--surface);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-soft);
 }
 
 .debug-info {
     color: var(--text-tertiary);
     font-size: var(--font-size-base);
+    text-align: center;
+    margin-top: 8px;
 }
 
 /* Error Banner */
@@ -145,12 +206,12 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
-/* Grid Layout - Masonry Style */
+/* Grid Layout - Uniform Height Cards */
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: var(--gutter);
-    align-items: start;
+    align-items: stretch;
 }
 
 /* Widget Card */
@@ -161,10 +222,18 @@ body {
     overflow: hidden;
     transition: box-shadow 0.2s ease;
     box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
 }
 
 .widget:hover {
     box-shadow: var(--shadow-medium);
+}
+
+.widget-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Widget Header */
@@ -201,16 +270,12 @@ body {
     border-radius: 6px;
 }
 
-/* Widget Content */
-.widget-content {
-    padding: 0;
-}
-
 /* Feed List */
 .feed-list {
     list-style: none;
     margin: 0;
     padding: 0;
+    flex: 1;
 }
 
 .feed-item {
@@ -262,42 +327,52 @@ body {
 
 /* Twitch Status Styles */
 .twitch-widget {
-    border-left: 3px solid #9146FF;
+    border-left: 3px solid var(--accent-purple);
 }
 
-.twitch-item a {
+.twitch-widget.twitch-live {
+    border-left-color: var(--accent-red);
+}
+
+.twitch-card-link {
     display: block;
-    padding: 12px var(--padding-card);
+    padding: 16px var(--padding-card);
+    text-decoration: none;
+    color: var(--text-primary);
+    transition: background 0.15s ease;
+}
+
+.twitch-card-link:hover {
+    background: var(--surface-hover);
 }
 
 .twitch-status-row {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 12px;
-}
-
-.twitch-name {
-    font-size: var(--font-size-md);
-    font-weight: 500;
-    color: var(--text-primary);
+    margin-bottom: 8px;
 }
 
 .twitch-live-badge {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     font-weight: 600;
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
     background: var(--accent-red);
     color: white;
     text-transform: uppercase;
     letter-spacing: 0.3px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 
 .twitch-offline-badge {
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     font-weight: 500;
-    padding: 3px 8px;
+    padding: 4px 10px;
     border-radius: 6px;
     background: var(--background);
     color: var(--text-tertiary);
@@ -307,16 +382,28 @@ body {
 
 .twitch-details {
     display: flex;
-    gap: 12px;
-    margin-top: 8px;
+    flex-direction: column;
+    gap: 6px;
     font-size: var(--font-size-base);
-    color: var(--text-tertiary);
+    color: var(--text-secondary);
 }
 
 .twitch-game, .twitch-viewers {
     display: flex;
     align-items: center;
     gap: 4px;
+}
+
+.twitch-title {
+    font-size: var(--font-size-sm);
+    color: var(--text-tertiary);
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+.twitch-offline-message {
+    color: var(--text-tertiary);
+    font-size: var(--font-size-base);
 }
 
 /* Empty State */

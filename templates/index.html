@@ -14,7 +14,36 @@
     </head>
     <body>
         <div class="page-header">
-            <h1>RSS Dashboard</h1>
+            <div class="header-content">
+                <h1>RSS Dashboard</h1>
+                <div class="theme-toggle">
+                    <button class="theme-btn" data-theme="light" title="Light theme">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+                    <button class="theme-btn" data-theme="dark" title="Dark theme">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                        </svg>
+                    </button>
+                    <button class="theme-btn" data-theme="system" title="System theme">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                            <line x1="8" y1="21" x2="16" y2="21"></line>
+                            <line x1="12" y1="17" x2="12" y2="21"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
             <div class="debug-info">
                 {% set blogs_count = namespace(count=0) %}
                 {% set security_count = namespace(count=0) %}
@@ -42,43 +71,40 @@
             <section class="feed-section">
                 <h2 class="section-title">🎮 Twitch Live Status</h2>
                 <div class="grid">
-                    {% if twitch_data|length > 0 %}
-                        <div class="widget twitch-widget" data-twitch="status">
+                    {% for streamer in twitch_data %}
+                        <div class="widget twitch-widget {% if streamer.is_live %}twitch-live{% endif %}" data-twitch="{{ streamer.name }}">
                             <div class="widget-header">
-                                <h3>Twitch Live Status</h3>
+                                <h3>{{ streamer.display_name }}</h3>
                                 <span class="widget-badge">Twitch</span>
                             </div>
                             <div class="widget-content">
-                                <ul class="feed-list">
-                                    {% for streamer in twitch_data %}
-                                        <li class="feed-item twitch-item">
-                                            <a href="https://twitch.tv/{{ streamer.name }}" target="_blank" rel="noopener">
-                                                <div class="twitch-status-row">
-                                                    <span class="twitch-name">{{ streamer.display_name }}</span>
-                                                    {% if streamer.is_live %}
-                                                        <span class="twitch-live-badge">LIVE</span>
-                                                    {% else %}
-                                                        <span class="twitch-offline-badge">OFFLINE</span>
-                                                    {% endif %}
-                                                </div>
-                                                {% if streamer.is_live %}
-                                                    <div class="twitch-details">
-                                                        {% if streamer.game %}
-                                                            <span class="twitch-game">🎮 {{ streamer.game }}</span>
-                                                        {% endif %}
-                                                        <span class="twitch-viewers">👁 {{ "{:,}".format(streamer.viewers) }}</span>
-                                                    </div>
-                                                {% endif %}
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                                <div class="widget-footer">
-                                    <small>{{ twitch_data|length }} channels</small>
-                                </div>
+                                <a href="https://twitch.tv/{{ streamer.name }}" target="_blank" rel="noopener" class="twitch-card-link">
+                                    <div class="twitch-status-row">
+                                        {% if streamer.is_live %}
+                                            <span class="twitch-live-badge">🔴 LIVE</span>
+                                        {% else %}
+                                            <span class="twitch-offline-badge">OFFLINE</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if streamer.is_live %}
+                                        <div class="twitch-details">
+                                            {% if streamer.game %}
+                                                <div class="twitch-game">🎮 {{ streamer.game }}</div>
+                                            {% endif %}
+                                            <div class="twitch-viewers">👁 {{ "{:,}".format(streamer.viewers) }} viewers</div>
+                                            {% if streamer.title %}
+                                                <div class="twitch-title">{{ streamer.title }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <div class="twitch-offline-message">
+                                            Currently offline
+                                        </div>
+                                    {% endif %}
+                                </a>
                             </div>
                         </div>
-                    {% endif %}
+                    {% endfor %}
                 </div>
             </section>
 
@@ -236,10 +262,6 @@
                                             <li class="feed-item">
                                                 <a href="{{ post.link }}" target="_blank" rel="noopener">
                                                     <div class="feed-title">{{ post.title }}</div>
-                                                    <div class="feed-meta">
-                                                        <span class="upvotes">↑ {{ post.score }}</span>
-                                                        <span class="comments">💬 {{ post.comments }}</span>
-                                                    </div>
                                                 </a>
                                             </li>
                                         {% endfor %}
@@ -266,6 +288,64 @@
         </div>
 
         <script>
+            // Theme Toggle Functionality
+            (function() {
+                const STORAGE_KEY = 'rss-dashboard-theme';
+                
+                function getSystemTheme() {
+                    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                
+                function applyTheme(theme) {
+                    if (theme === 'system') {
+                        document.documentElement.setAttribute('data-theme', getSystemTheme());
+                    } else {
+                        document.documentElement.setAttribute('data-theme', theme);
+                    }
+                    
+                    // Update active button
+                    document.querySelectorAll('.theme-btn').forEach(btn => {
+                        btn.classList.toggle('active', btn.dataset.theme === theme);
+                    });
+                }
+                
+                function setTheme(theme) {
+                    localStorage.setItem(STORAGE_KEY, theme);
+                    applyTheme(theme);
+                }
+                
+                // Initialize theme - default to dark
+                function initTheme() {
+                    const savedTheme = localStorage.getItem(STORAGE_KEY) || 'dark';
+                    applyTheme(savedTheme);
+                }
+                
+                // Apply theme immediately to prevent flash
+                initTheme();
+                
+                // Setup event listeners after DOM is ready
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Re-apply to ensure buttons are updated
+                    const savedTheme = localStorage.getItem(STORAGE_KEY) || 'dark';
+                    applyTheme(savedTheme);
+                    
+                    // Add click handlers
+                    document.querySelectorAll('.theme-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            setTheme(this.dataset.theme);
+                        });
+                    });
+                    
+                    // Listen for system theme changes
+                    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+                        const currentTheme = localStorage.getItem(STORAGE_KEY) || 'dark';
+                        if (currentTheme === 'system') {
+                            applyTheme('system');
+                        }
+                    });
+                });
+            })();
+
             console.log('Dashboard loaded');
             console.log('Sections:', {{ config.sections|length }});
             console.log('Reddit feeds:', {{ reddit_data|length }});
