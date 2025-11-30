@@ -176,7 +176,6 @@ def fetch_reddit(subreddit, limit=5):
     # Try JSON endpoint first with retry logic
     json_url = f'https://www.reddit.com/r/{subreddit}/top.json?limit={limit}&t=day'
     max_retries = 3
-    backoff_times = [1, 2, 4]  # Exponential backoff: 1s, 2s, 4s
 
     for attempt in range(max_retries):
         try:
@@ -188,7 +187,7 @@ def fetch_reddit(subreddit, limit=5):
                 log(f"Reddit JSON attempt {attempt + 1}/{max_retries} failed for r/{subreddit}: "
                     f"HTTP {response.status_code}, response: {response_preview}")
                 if attempt < max_retries - 1:
-                    sleep_time = backoff_times[attempt]
+                    sleep_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s, ...
                     log(f"Retrying r/{subreddit} in {sleep_time}s...")
                     time.sleep(sleep_time)
                     continue
@@ -223,7 +222,7 @@ def fetch_reddit(subreddit, limit=5):
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
             log(f"Reddit JSON attempt {attempt + 1}/{max_retries} failed for r/{subreddit}: {type(e).__name__}: {e}")
             if attempt < max_retries - 1:
-                sleep_time = backoff_times[attempt]
+                sleep_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s, ...
                 log(f"Retrying r/{subreddit} in {sleep_time}s...")
                 time.sleep(sleep_time)
             else:
