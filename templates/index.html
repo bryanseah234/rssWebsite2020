@@ -291,9 +291,14 @@
             // Theme Toggle Functionality
             (function() {
                 const STORAGE_KEY = 'rss-dashboard-theme';
+                const DEFAULT_THEME = 'dark';
                 
                 function getSystemTheme() {
                     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                }
+                
+                function getSavedTheme() {
+                    return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
                 }
                 
                 function applyTheme(theme) {
@@ -314,20 +319,13 @@
                     applyTheme(theme);
                 }
                 
-                // Initialize theme - default to dark
-                function initTheme() {
-                    const savedTheme = localStorage.getItem(STORAGE_KEY) || 'dark';
-                    applyTheme(savedTheme);
-                }
-                
                 // Apply theme immediately to prevent flash
-                initTheme();
+                applyTheme(getSavedTheme());
                 
                 // Setup event listeners after DOM is ready
                 document.addEventListener('DOMContentLoaded', function() {
                     // Re-apply to ensure buttons are updated
-                    const savedTheme = localStorage.getItem(STORAGE_KEY) || 'dark';
-                    applyTheme(savedTheme);
+                    applyTheme(getSavedTheme());
                     
                     // Add click handlers
                     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -338,8 +336,7 @@
                     
                     // Listen for system theme changes
                     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
-                        const currentTheme = localStorage.getItem(STORAGE_KEY) || 'dark';
-                        if (currentTheme === 'system') {
+                        if (getSavedTheme() === 'system') {
                             applyTheme('system');
                         }
                     });

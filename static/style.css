@@ -1,7 +1,8 @@
 @charset "utf-8";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
-/* Light theme (default) */
+/* Light theme variables - applied when data-theme="light" or no theme set in CSS */
+/* Note: JavaScript defaults to dark theme on first load */
 :root {
     /* Glance-inspired neutral color system */
     --background: #F6F7F9;
