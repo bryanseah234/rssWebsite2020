@@ -161,33 +161,111 @@ def get_time_ago(dt):
 
 
 def fetch_reddit(subreddit, limit=5):
-    """Fetch Reddit posts"""
+    """Fetch Reddit posts with retry logic and RSS fallback"""
+    import requests
+    import time
+    import feedparser
+
+    # Realistic browser-like User-Agent
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36'
+    }
+
+    log(f"Fetching Reddit: r/{subreddit}")
+
+    # Try JSON endpoint first with retry logic
+    json_url = f'https://www.reddit.com/r/{subreddit}/top.json?limit={limit}&t=day'
+    max_retries = 3
+
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(json_url, headers=headers, timeout=10)
+
+            # Check for retryable status codes (429 or 5xx)
+            if response.status_code == 429 or response.status_code >= 500:
+                response_preview = response.text[:500] if response.text else ''
+                log(f"Reddit JSON attempt {attempt + 1}/{max_retries} failed for r/{subreddit}: "
+                    f"HTTP {response.status_code}, response: {response_preview}")
+                if attempt < max_retries - 1:
+                    # Exponential backoff: 1s, 2s, 4s, ...
+                    sleep_time = 2 ** attempt
+                    log(f"Retrying r/{subreddit} in {sleep_time}s...")
+                    time.sleep(sleep_time)
+                    continue
+                else:
+                    log(f"All {max_retries} JSON attempts failed for r/{subreddit}, trying RSS fallback")
+                    break
+
+            # Log non-200 status codes with response preview
+            if response.status_code != 200:
+                response_preview = response.text[:500] if response.text else ''
+                log(f"Reddit JSON non-200 status for r/{subreddit}: "
+                    f"HTTP {response.status_code}, response: {response_preview}")
+                break
+
+            # Parse JSON response
+            data = response.json()
+            log(f"Reddit JSON fetch successful: r/{subreddit}")
+
+            posts = []
+            for post in data['data']['children'][:limit]:
+                p = post['data']
+                posts.append({
+                    'title': p.get('title', '')[:150],
+                    'link': f"https://reddit.com{p.get('permalink', '')}",
+                    'score': p.get('score', 0),
+                    'comments': p.get('num_comments', 0)
+                })
+
+            log(f"Returning {len(posts)} posts from r/{subreddit}")
+            return posts
+
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError) as e:
+            log(f"Reddit JSON attempt {attempt + 1}/{max_retries} failed for r/{subreddit}: {type(e).__name__}: {e}")
+            if attempt < max_retries - 1:
+                # Exponential backoff: 1s, 2s, 4s, ...
+                sleep_time = 2 ** attempt
+                log(f"Retrying r/{subreddit} in {sleep_time}s...")
+                time.sleep(sleep_time)
+            else:
+                log(f"All {max_retries} JSON attempts failed for r/{subreddit}, trying RSS fallback")
+        except Exception as e:
+            log(f"Reddit JSON error for r/{subreddit}: {type(e).__name__}: {e}")
+            log(traceback.format_exc())
+            break
+
+    # RSS fallback
+    rss_url = f'https://www.reddit.com/r/{subreddit}/.rss'
+    log(f"Trying RSS fallback for r/{subreddit}: {rss_url}")
+
     try:
-        log(f"Fetching Reddit: r/{subreddit}")
-        import requests
+        response = requests.get(rss_url, headers=headers, timeout=10)
 
-        url = f'https://www.reddit.com/r/{subreddit}/top.json?limit={limit}&t=day'
-        headers = {'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)'}
-        response = requests.get(url, headers=headers, timeout=5)
-        response.raise_for_status()
-        data = response.json()
+        if response.status_code != 200:
+            response_preview = response.text[:500] if response.text else ''
+            log(f"Reddit RSS non-200 status for r/{subreddit}: "
+                f"HTTP {response.status_code}, response: {response_preview}")
+            return []
 
-        log(f"Reddit fetch successful: r/{subreddit}")
+        feed = feedparser.parse(response.content)
+        log(
+            f"Reddit RSS fetch successful: r/{subreddit}, {len(feed.entries)} entries")
 
         posts = []
-        for post in data['data']['children'][:limit]:
-            p = post['data']
+        for entry in feed.entries[:limit]:
             posts.append({
-                'title': p.get('title', '')[:150],
-                'link': f"https://reddit.com{p.get('permalink', '')}",
-                'score': p.get('score', 0),
-                'comments': p.get('num_comments', 0)
+                'title': entry.get('title', 'No title')[:150],
+                'link': entry.get('link', '#'),
+                'score': 0,  # RSS doesn't provide score
+                'comments': 0  # RSS doesn't provide comment count
             })
 
-        log(f"Returning {len(posts)} posts from r/{subreddit}")
+        log(f"Returning {len(posts)} posts from r/{subreddit} via RSS")
         return posts
+
     except Exception as e:
-        log(f"ERROR fetching r/{subreddit}: {e}")
+        log(
+            f"Reddit RSS fallback error for r/{subreddit}: {type(e).__name__}: {e}")
         log(traceback.format_exc())
         return []
 
