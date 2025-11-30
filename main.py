@@ -247,7 +247,8 @@ def fetch_reddit(subreddit, limit=5):
             return []
 
         feed = feedparser.parse(response.content)
-        log(f"Reddit RSS fetch successful: r/{subreddit}, {len(feed.entries)} entries")
+        log(
+            f"Reddit RSS fetch successful: r/{subreddit}, {len(feed.entries)} entries")
 
         posts = []
         for entry in feed.entries[:limit]:
@@ -262,7 +263,8 @@ def fetch_reddit(subreddit, limit=5):
         return posts
 
     except Exception as e:
-        log(f"Reddit RSS fallback error for r/{subreddit}: {type(e).__name__}: {e}")
+        log(
+            f"Reddit RSS fallback error for r/{subreddit}: {type(e).__name__}: {e}")
         log(traceback.format_exc())
         return []
 
