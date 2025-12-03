@@ -310,7 +310,7 @@ def fetch_youtube(channel_id, channel_name, limit=3):
                 thumbnail = entry.media_thumbnail[0].get('url', '')
             elif hasattr(entry, 'media_content') and entry.media_content:
                 thumbnail = entry.media_content[0].get('url', '')
-            
+
             videos.append({
                 'title': entry.get('title', 'No title')[:150],
                 'link': entry.get('link', '#'),
@@ -597,7 +597,8 @@ def root():
         log(f"Fetched status from {len(twitch_data)} Twitch channels")
 
         # Sort Twitch data: live channels first, then offline
-        twitch_data.sort(key=lambda x: (not x.get('is_live', False), x.get('display_name', '').lower()))
+        twitch_data.sort(key=lambda x: (
+            not x.get('is_live', False), x.get('display_name', '').lower()))
         log(f"Sorted Twitch data: live channels first")
 
         log("=== Rendering template ===")
