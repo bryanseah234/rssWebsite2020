@@ -306,9 +306,9 @@ def fetch_youtube(channel_id, channel_name, limit=3):
 
             # Extract thumbnail from media:thumbnail or media_thumbnail
             thumbnail = ''
-            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail:
+            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail and len(entry.media_thumbnail) > 0:
                 thumbnail = entry.media_thumbnail[0].get('url', '')
-            elif hasattr(entry, 'media_content') and entry.media_content:
+            elif hasattr(entry, 'media_content') and entry.media_content and len(entry.media_content) > 0:
                 thumbnail = entry.media_content[0].get('url', '')
 
             videos.append({

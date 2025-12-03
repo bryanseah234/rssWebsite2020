@@ -585,9 +585,9 @@ body {
     align-items: stretch;
 }
 
-.youtube-video-link {
-    display: flex !important;
-    flex-direction: row !important;
+.youtube-item .youtube-video-link {
+    display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 12px;
     width: 100%;
