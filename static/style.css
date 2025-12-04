@@ -212,6 +212,7 @@ body {
     margin-bottom: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border);
+    text-align: center;
 }
 
 /* Grid Layout - Uniform Height Cards */
@@ -576,6 +577,45 @@ body {
 .feed-item a:focus-visible {
     outline: 2px solid var(--accent-blue);
     outline-offset: -2px;
+}
+
+/* YouTube Thumbnail Styles */
+.youtube-item {
+    display: flex;
+    align-items: stretch;
+}
+
+.youtube-item .youtube-video-link {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.youtube-thumbnail {
+    width: 120px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.youtube-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.youtube-text .feed-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
 }
 
 /* Link Styling */

@@ -3,7 +3,6 @@
     {
       "title": "Blogs",
       "feeds": [
-        {"name": "Quinncheong", "url": "https://quinncheong.com/feed.xml", "limit": 3},
         {"name": "Guan Jie", "url": "https://guanjiefung.com/feed/", "limit": 3},
         {"name": "Raymond Yeh", "url": "https://geek.sg/rss", "limit": 3},
         {"name": "daniel", "url": "https://daniel.haxx.se/blog/feed/", "limit": 3},
@@ -21,7 +20,8 @@
         {"name": "Bounded Rationality", "url": "https://bjlkeng.io//rss.xml", "limit": 3},
         {"name": "On my Om", "url": "https://om.co/feed/", "limit": 3},
         {"name": "Brian Lovin", "url": "https://brianlovin.com/writing/rss.xml", "limit": 3},
-        {"name": "David Lim", "url": "https://davidlhw.dev/rss.xml", "limit": 3}
+        {"name": "David Lim", "url": "https://davidlhw.dev/rss.xml", "limit": 3},
+        {"name": "The Blue and Gold", "url": "https://www.theblueandgold.sg/blog-feed.xml", "limit": 3}
       ]
     },
     {
@@ -37,7 +37,6 @@
         {"name": "Labs Detectify", "url": "https://labs.detectify.com/feed", "limit": 5},
         {"name": "Schneier on Security", "url": "https://www.schneier.com/feed/", "limit": 5},
         {"name": "Sector035", "url": "https://sector035.nl/articles.rss", "limit": 5},
-        {"name": "The Blue and Gold", "url": "https://www.theblueandgold.sg/blog-feed.xml", "limit": 5},
         {"name": "Security Affairs", "url": "https://securityaffairs.com/feed", "limit": 5}
       ]
     }
@@ -48,7 +47,7 @@
     "iosbeta",
     "shortcuts",
     "nostupidquestions",
-    "internetisbeautiful"
+    "dumbphones"
   ],
   "youtube_channels": [
     {"name": "Linus Tech Tips", "channel_id": "UCXuqSBlHAE6Xw-yeJA0Tunw", "category": "Tech", "limit": 3},
@@ -59,10 +58,20 @@
     {"name": "Philip DeFranco", "channel_id": "UClFSU9_bUb4Rc6OYfTt5SPw", "category": "Update", "limit": 3}
   ],
   "twitch_channels": [
-    "shroud",
     "pokimane",
     "xQc",
     "Ninja",
-    "summit1g"
+    "scarra",
+    "lilypichu",
+    "disguisedtoast",
+    "michaelreeves",
+    "quarterjade",
+    "masayoshi",
+    "sydeon",
+    "yvonnie",
+    "fuslie",
+    "jasontheween",
+    "qtcinderella",
+    "mayahiga"
   ]
 }
