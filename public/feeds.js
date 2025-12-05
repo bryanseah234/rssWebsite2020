@@ -20,7 +20,15 @@ const FEEDS = {
     { name: 'MrBruh', url: 'https://mrbruh.com/index.xml', limit: 3 },
     { name: 'Hillel Wayne', url: 'https://www.hillelwayne.com/index.xml', limit: 3 },
     { name: 'Bounded Rationality', url: 'https://bjlkeng.io//rss.xml', limit: 3 },
-    { name: 'On my Om', url: 'https://om.co/feed/', limit: 3 }
+    { name: 'On my Om', url: 'https://om.co/feed/', limit: 3 },
+    { name: 'Avery Lim', url: 'https://blog.averylim.com/rss.xml', limit: 3 },
+    { name: 'ntietz', url: 'https://ntietz.com/atom.xml', limit: 3 },
+    { name: 'sadgrl', url: 'https://sadgrl.online/posts/rss.xml', limit: 3 },
+    { name: 'Vaughn Tan', url: 'https://vaughntan.org/feed.rss', limit: 3 },
+    { name: 'freyavie', url: 'https://freyavie.blog/feed/?type=rss', limit: 3 },
+    { name: 'ryeones', url: 'https://www.ryeones.com/feed.xml', limit: 3 },
+    { name: 'Sarah Mak', url: 'https://sarahmakmq.com/posts/index.xml', limit: 3 },
+    { name: 'Said Hasyim', url: 'https://www.saidhasyim.com/rss.xml', limit: 3 }
   ],
   security: [
     { name: 'Hackread', url: 'https://hackread.com/feed/', limit: 5 },
@@ -34,7 +42,8 @@ const FEEDS = {
     { name: 'Schneier on Security', url: 'https://www.schneier.com/feed/', limit: 5 },
     { name: 'Sector035', url: 'https://sector035.nl/articles.rss', limit: 5 },
     { name: 'The Blue and Gold', url: 'https://www.theblueandgold.sg/blog-feed.xml', limit: 5 },
-    { name: 'Security Affairs', url: 'https://securityaffairs.com/feed', limit: 5 }
+    { name: 'Security Affairs', url: 'https://securityaffairs.com/feed', limit: 5 },
+    { name: 'Collecting Flags', url: 'https://collectingflags.com/feed/', limit: 5 }
   ]
 };
 
