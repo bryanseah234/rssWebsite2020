@@ -87,12 +87,12 @@ def load_feeds_config():
 
 def fetch_rss_feed(url, limit=5, fetch_all=True):
     """Fetch and parse RSS feed
-    
+
     Args:
         url: Feed URL
         limit: Initial display limit
         fetch_all: If True, fetch up to 50 items for load-more; if False, only fetch limit
-    
+
     Returns:
         dict with 'items' (all items), 'error' flag, and 'total_count'
     """
@@ -482,7 +482,8 @@ def root():
                     feed_info = future_to_feed[future]
                     try:
                         result = future.result()
-                        feed_data = sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]
+                        feed_data = sections[feed_info['section_idx']
+                                             ]['feeds'][feed_info['feed_idx']]
                         feed_data['all_items'] = result['items']
                         feed_data['items'] = result['items'][:feed_data['initial_limit']]
                         feed_data['error'] = result['error']
@@ -490,7 +491,8 @@ def root():
                         feed_data['total_count'] = result['total_count']
                     except Exception as e:
                         log(f"Error fetching {feed_info['feed']['url']}: {e}")
-                        feed_data = sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]
+                        feed_data = sections[feed_info['section_idx']
+                                             ]['feeds'][feed_info['feed_idx']]
                         feed_data['items'] = []
                         feed_data['all_items'] = []
                         feed_data['error'] = True
@@ -502,7 +504,8 @@ def root():
                 for future, feed_info in future_to_feed.items():
                     future.cancel()
                     # Ensure data is set even for timed-out feeds
-                    feed_data = sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]
+                    feed_data = sections[feed_info['section_idx']
+                                         ]['feeds'][feed_info['feed_idx']]
                     if 'items' not in feed_data:
                         feed_data['items'] = []
                         feed_data['all_items'] = []
