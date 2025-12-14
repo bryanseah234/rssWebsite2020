@@ -27,9 +27,7 @@
         {"name": "sadgrl", "url": "https://sadgrl.online/posts/rss.xml", "limit": 3},
         {"name": "Vaughn Tan", "url": "https://vaughntan.org/feed.rss", "limit": 3},
         {"name": "freyavie", "url": "https://freyavie.blog/feed/?type=rss", "limit": 3},
-        {"name": "ryeones", "url": "https://www.ryeones.com/feed.xml", "limit": 3},
-        {"name": "Sarah Mak", "url": "https://sarahmakmq.com/posts/index.xml", "limit": 3},
-        {"name": "Said Hasyim", "url": "https://www.saidhasyim.com/rss.xml", "limit": 3}
+        {"name": "ryeones", "url": "https://www.ryeones.com/feed.xml", "limit": 3}
       ]
     },
     {

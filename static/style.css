@@ -626,3 +626,67 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+/* Load More Button */
+.load-more-btn {
+    background: var(--accent-blue);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: background 0.2s ease;
+    width: 100%;
+    font-family: inherit;
+}
+
+.load-more-btn:hover {
+    background: #2563eb;
+}
+
+.load-more-btn:active {
+    transform: translateY(1px);
+}
+
+/* Hidden Items */
+.feed-item.hidden-item {
+    display: none;
+}
+
+/* Offline Section */
+.offline-section {
+    margin-top: 32px;
+}
+
+.section-header-collapsible {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding: 12px 0;
+    user-select: none;
+}
+
+.section-header-collapsible:hover {
+    opacity: 0.8;
+}
+
+.collapse-indicator {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    transition: transform 0.2s ease;
+}
+
+.offline-widget {
+    opacity: 0.7;
+}
+
+.offline-widget .widget-header {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.offline-feeds-grid {
+    margin-top: 16px;
+}

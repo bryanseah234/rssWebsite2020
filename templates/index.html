@@ -143,44 +143,46 @@
                 <div class="grid">
                     {% for section in config.sections if section.title == "Blogs" or "blog" in (section.title|lower) %}
                         {% for feed in section.feeds %}
-                            <div class="widget" data-feed="{{ feed.name }}">
+                            {% if not feed.error %}
+                            <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
                                 <div class="widget-header">
                                     <h3>{{ feed.name }}</h3>
                                     <span class="widget-badge">{{ section.title }}</span>
                                 </div>
                                 <div class="widget-content">
-                                    {% if feed['items'] %}
-                                        {% if feed['items']|length > 0 %}
-                                            <ul class="feed-list">
-                                                {% for item in feed['items'] %}
-                                                    <li class="feed-item">
-                                                        <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                                            <div class="feed-title">{{ item.title }}</div>
-                                                            {% if item.published %}
-                                                                <div class="feed-time">{{ item.published }}</div>
-                                                            {% endif %}
-                                                        </a>
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                            <div class="widget-footer">
-                                                <small>Loaded {{ feed['items']|length }} items</small>
-                                            </div>
+                                    {% if feed['items']|length > 0 %}
+                                        <ul class="feed-list" data-visible-count="{{ feed['items']|length }}">
+                                            {% for item in feed['all_items'] %}
+                                                <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
+                                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                                        <div class="feed-title">{{ item.title }}</div>
+                                                        {% if item.published %}
+                                                            <div class="feed-time">{{ item.published }}</div>
+                                                        {% endif %}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% if feed['all_items']|length > feed['items']|length %}
+                                        <div class="widget-footer">
+                                            <button class="load-more-btn" data-feed-name="{{ feed.name }}">
+                                                Load More ({{ feed['all_items']|length - feed['items']|length }} more)
+                                            </button>
+                                        </div>
                                         {% else %}
-                                            <div class="empty-state">
-                                                <span class="status-icon">⏳</span>
-                                                <p>No items found</p>
-                                            </div>
+                                        <div class="widget-footer">
+                                            <small>Loaded {{ feed['items']|length }} items</small>
+                                        </div>
                                         {% endif %}
                                     {% else %}
-                                        <div class="empty-state error">
-                                            <span class="status-icon">❌</span>
-                                            <p>Failed to load feed</p>
-                                            <small>{{ feed.url }}</small>
+                                        <div class="empty-state">
+                                            <span class="status-icon">⏳</span>
+                                            <p>No items found</p>
                                         </div>
                                     {% endif %}
                                 </div>
                             </div>
+                            {% endif %}
                         {% endfor %}
                     {% endfor %}
                 </div>
@@ -192,44 +194,46 @@
                 <div class="grid">
                     {% for section in config.sections if "security" in (section.title|lower) or "tech" in (section.title|lower) %}
                         {% for feed in section.feeds %}
-                            <div class="widget" data-feed="{{ feed.name }}">
+                            {% if not feed.error %}
+                            <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
                                 <div class="widget-header">
                                     <h3>{{ feed.name }}</h3>
                                     <span class="widget-badge">{{ section.title }}</span>
                                 </div>
                                 <div class="widget-content">
-                                    {% if feed['items'] %}
-                                        {% if feed['items']|length > 0 %}
-                                            <ul class="feed-list">
-                                                {% for item in feed['items'] %}
-                                                    <li class="feed-item">
-                                                        <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                                            <div class="feed-title">{{ item.title }}</div>
-                                                            {% if item.published %}
-                                                                <div class="feed-time">{{ item.published }}</div>
-                                                            {% endif %}
-                                                        </a>
-                                                    </li>
-                                                {% endfor %}
-                                            </ul>
-                                            <div class="widget-footer">
-                                                <small>Loaded {{ feed['items']|length }} items</small>
-                                            </div>
+                                    {% if feed['items']|length > 0 %}
+                                        <ul class="feed-list" data-visible-count="{{ feed['items']|length }}">
+                                            {% for item in feed['all_items'] %}
+                                                <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
+                                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                                        <div class="feed-title">{{ item.title }}</div>
+                                                        {% if item.published %}
+                                                            <div class="feed-time">{{ item.published }}</div>
+                                                        {% endif %}
+                                                    </a>
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                        {% if feed['all_items']|length > feed['items']|length %}
+                                        <div class="widget-footer">
+                                            <button class="load-more-btn" data-feed-name="{{ feed.name }}">
+                                                Load More ({{ feed['all_items']|length - feed['items']|length }} more)
+                                            </button>
+                                        </div>
                                         {% else %}
-                                            <div class="empty-state">
-                                                <span class="status-icon">⏳</span>
-                                                <p>No items found</p>
-                                            </div>
+                                        <div class="widget-footer">
+                                            <small>Loaded {{ feed['items']|length }} items</small>
+                                        </div>
                                         {% endif %}
                                     {% else %}
-                                        <div class="empty-state error">
-                                            <span class="status-icon">❌</span>
-                                            <p>Failed to load feed</p>
-                                            <small>{{ feed.url }}</small>
+                                        <div class="empty-state">
+                                            <span class="status-icon">⏳</span>
+                                            <p>No items found</p>
                                         </div>
                                     {% endif %}
                                 </div>
                             </div>
+                            {% endif %}
                         {% endfor %}
                     {% endfor %}
                 </div>
@@ -270,6 +274,42 @@
                     {% endfor %}
                 </div>
             </section>
+
+            <!-- Offline/Failed Feeds Section -->
+            {% set offline_feeds = namespace(list=[]) %}
+            {% for section in config.sections %}
+                {% for feed in section.feeds %}
+                    {% if feed.error %}
+                        {% set _ = offline_feeds.list.append({'name': feed.name, 'url': feed.url, 'error_msg': feed.error_msg, 'section': section.title}) %}
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+            
+            {% if offline_feeds.list|length > 0 %}
+            <section class="feed-section offline-section">
+                <div class="section-header-collapsible" onclick="toggleOfflineSection()">
+                    <h2 class="section-title">⚠️ Offline Feeds ({{ offline_feeds.list|length }})</h2>
+                    <span class="collapse-indicator">▼</span>
+                </div>
+                <div class="grid offline-feeds-grid" id="offline-feeds" style="display: none;">
+                    {% for feed in offline_feeds.list %}
+                        <div class="widget offline-widget">
+                            <div class="widget-header">
+                                <h3>{{ feed.name }}</h3>
+                                <span class="widget-badge">{{ feed.section }}</span>
+                            </div>
+                            <div class="widget-content">
+                                <div class="empty-state error">
+                                    <span class="status-icon">❌</span>
+                                    <p>Failed to load feed</p>
+                                    <small>{{ feed.error_msg or 'Unknown error' }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+            {% endif %}
         </div>
 
         <div class="footer">
@@ -461,6 +501,54 @@
                         errorWidget.appendChild(small);
                     });
             });
+
+            // Load More functionality
+            document.querySelectorAll('.load-more-btn').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var widget = this.closest('.widget');
+                    var feedList = widget.querySelector('.feed-list');
+                    var hiddenItems = feedList.querySelectorAll('.hidden-item');
+                    
+                    // Show next batch (5 items at a time)
+                    var itemsToShow = 5;
+                    var shown = 0;
+                    for (var i = 0; i < hiddenItems.length && shown < itemsToShow; i++) {
+                        if (hiddenItems[i].classList.contains('hidden-item')) {
+                            hiddenItems[i].classList.remove('hidden-item');
+                            shown++;
+                        }
+                    }
+                    
+                    // Update visible count
+                    var currentVisible = parseInt(feedList.dataset.visibleCount) || 0;
+                    feedList.dataset.visibleCount = currentVisible + shown;
+                    
+                    // Check if there are more items to load
+                    var remainingHidden = feedList.querySelectorAll('.hidden-item').length;
+                    if (remainingHidden === 0) {
+                        // No more items, replace button with message
+                        var footer = this.closest('.widget-footer');
+                        footer.innerHTML = '<small>All items loaded</small>';
+                    } else {
+                        // Update button text with remaining count
+                        this.textContent = 'Load More (' + remainingHidden + ' more)';
+                    }
+                });
+            });
+
+            // Toggle offline feeds section
+            function toggleOfflineSection() {
+                var offlineGrid = document.getElementById('offline-feeds');
+                var indicator = document.querySelector('.offline-section .collapse-indicator');
+                if (offlineGrid.style.display === 'none') {
+                    offlineGrid.style.display = 'grid';
+                    indicator.textContent = '▲';
+                } else {
+                    offlineGrid.style.display = 'none';
+                    indicator.textContent = '▼';
+                }
+            }
         </script>
     </body>
 </html>
