@@ -59,6 +59,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('youtube', FEEDS.youtube.length);
   }
   
   // Blogs section
@@ -69,6 +70,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('blogs', FEEDS.blogs.length);
   }
   
   // Security section
@@ -79,6 +81,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('security', FEEDS.security.length);
   }
   
   // Subreddits section
@@ -89,6 +92,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('subreddits', FEEDS.subreddits.length);
   }
   
   // Twitch section
@@ -99,6 +103,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('twitch', FEEDS.twitch.length);
   }
   
   totalFeeds = feedConfigs.length;
@@ -295,10 +300,12 @@ function toggleOfflineSection() {
   if (content.classList.contains('expanded')) {
     content.classList.remove('expanded');
     header.classList.remove('expanded');
+    header.setAttribute('aria-expanded', 'false');
     indicator.textContent = '▼';
   } else {
     content.classList.add('expanded');
     header.classList.add('expanded');
+    header.setAttribute('aria-expanded', 'true');
     indicator.textContent = '▲';
   }
 }
@@ -432,16 +439,24 @@ function switchSection(sectionName) {
     sectionScrollPositions[currentSection] = window.scrollY;
   }
   
-  // Update active states
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  // Update active states and ARIA attributes
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-hidden', 'true');
+  });
+  document.querySelectorAll('.tab-btn').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
   
   const newSection = document.getElementById(`${sectionName}-section`);
   const newTab = document.querySelector(`.tab-btn[data-section="${sectionName}"]`);
   
   if (newSection && newTab) {
     newSection.classList.add('active');
+    newSection.setAttribute('aria-hidden', 'false');
     newTab.classList.add('active');
+    newTab.setAttribute('aria-selected', 'true');
     currentSection = sectionName;
     
     // Restore scroll position
@@ -507,15 +522,15 @@ function openModal(feedName, feedData) {
   }
   
   // Reset modal state
-  modalLoadOffset = MODAL_LOAD_INCREMENT;
+  modalLoadOffset = 20; // Start at 20 (10 initial + 10 for first modal batch)
   modalItems = feedData.items;
   modalTotalItems = feedData.items.length;
   modalIsLoading = false;
   
-  // Load initial items (skip first 5 that are already shown in card)
-  const initialItems = modalItems.slice(5, modalLoadOffset);
+  // Load initial items (skip first 10 that are already shown in card)
+  const initialItems = modalItems.slice(10, modalLoadOffset);
   body.innerHTML = '<ul class="feed-items">' + 
-    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 5}">${createFeedItemHTML(item, index + 5)}</li>`).join('') +
+    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 10}">${createFeedItemHTML(item, index + 10)}</li>`).join('') +
     '</ul>';
   
   // Show modal
@@ -548,11 +563,13 @@ function handleModalScroll() {
   if (nearBottom && !modalIsLoading && modalLoadOffset < modalTotalItems) {
     modalIsLoading = true;
     loading.style.display = 'block';
+    loading.setAttribute('aria-busy', 'true');
     
     // Simulate loading delay (can be adjusted)
     setTimeout(() => {
       loadMoreModalItems();
       loading.style.display = 'none';
+      loading.setAttribute('aria-busy', 'false');
       modalIsLoading = false;
     }, 300);
   }
@@ -601,6 +618,17 @@ function updateFeedCount() {
     countEl.textContent = `Loading ${loadedFeeds}/${totalFeeds} feeds...`;
   } else {
     countEl.textContent = `${totalFeeds} feeds loaded`;
+  }
+}
+
+/**
+ * Update tab count badge
+ */
+function updateTabCount(section, count) {
+  const countEl = document.getElementById(`${section}-tab-count`);
+  if (countEl) {
+    countEl.textContent = count;
+    countEl.setAttribute('aria-label', `${count} feeds`);
   }
 }
 

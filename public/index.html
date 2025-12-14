@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="A modern, mobile-first RSS dashboard with swipeable navigation">
-  <title>RSS Dashboard</title>
+  <title>PrawnFeeds - Modern RSS Reader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
             <path d="M4 4a16 16 0 0 1 16 16"></path>
             <circle cx="5" cy="19" r="1"></circle>
           </svg>
-          <h1>RSS Dashboard</h1>
+          <h1>PrawnFeeds</h1>
         </div>
         <div class="header-stats">
           <span id="feed-count">Loading feeds...</span>
@@ -34,101 +34,101 @@
   </header>
 
   <!-- Tab Navigation -->
-  <nav class="tab-nav">
-    <div class="tab-container">
-      <button class="tab-btn active" data-section="youtube">
+  <nav class="tab-nav" role="navigation" aria-label="Feed section navigation">
+    <div class="tab-container" role="tablist">
+      <button id="youtube-tab" class="tab-btn active" data-section="youtube" role="tab" aria-selected="true" aria-controls="youtube-section">
         <span class="tab-label">YouTube</span>
-        <span class="tab-count" id="youtube-tab-count">6</span>
+        <span class="tab-count" id="youtube-tab-count" aria-label="6 feeds">6</span>
       </button>
-      <button class="tab-btn" data-section="blogs">
+      <button id="blogs-tab" class="tab-btn" data-section="blogs" role="tab" aria-selected="false" aria-controls="blogs-section">
         <span class="tab-label">Blogs</span>
-        <span class="tab-count" id="blogs-tab-count">25</span>
+        <span class="tab-count" id="blogs-tab-count" aria-label="25 feeds">25</span>
       </button>
-      <button class="tab-btn" data-section="security">
+      <button id="security-tab" class="tab-btn" data-section="security" role="tab" aria-selected="false" aria-controls="security-section">
         <span class="tab-label">Security</span>
-        <span class="tab-count" id="security-tab-count">12</span>
+        <span class="tab-count" id="security-tab-count" aria-label="12 feeds">12</span>
       </button>
-      <button class="tab-btn" data-section="subreddits">
+      <button id="subreddits-tab" class="tab-btn" data-section="subreddits" role="tab" aria-selected="false" aria-controls="subreddits-section">
         <span class="tab-label">Subreddits</span>
-        <span class="tab-count" id="subreddits-tab-count">6</span>
+        <span class="tab-count" id="subreddits-tab-count" aria-label="6 feeds">6</span>
       </button>
-      <button class="tab-btn" data-section="twitch">
+      <button id="twitch-tab" class="tab-btn" data-section="twitch" role="tab" aria-selected="false" aria-controls="twitch-section">
         <span class="tab-label">Twitch</span>
-        <span class="tab-count" id="twitch-tab-count">15</span>
+        <span class="tab-count" id="twitch-tab-count" aria-label="15 feeds">15</span>
       </button>
     </div>
   </nav>
 
   <!-- Swipeable Sections Container -->
-  <main class="sections-container">
-    <div class="sections-wrapper" id="sections-wrapper">
+  <main class="sections-container" role="main">
+    <div class="sections-wrapper" id="sections-wrapper" aria-live="polite">
       <!-- YouTube Section -->
-      <section class="section active" id="youtube-section" data-section="youtube">
+      <section class="section active" id="youtube-section" data-section="youtube" role="tabpanel" aria-labelledby="youtube-tab">
         <div class="section-content">
-          <div class="feed-grid" id="youtube-grid"></div>
+          <div class="feed-grid" id="youtube-grid" role="feed" aria-label="YouTube video feeds"></div>
         </div>
       </section>
 
       <!-- Blogs Section -->
-      <section class="section" id="blogs-section" data-section="blogs">
+      <section class="section" id="blogs-section" data-section="blogs" role="tabpanel" aria-labelledby="blogs-tab" aria-hidden="true">
         <div class="section-content">
-          <div class="feed-grid" id="blogs-grid"></div>
+          <div class="feed-grid" id="blogs-grid" role="feed" aria-label="Blog feeds"></div>
         </div>
       </section>
 
       <!-- Security Section -->
-      <section class="section" id="security-section" data-section="security">
+      <section class="section" id="security-section" data-section="security" role="tabpanel" aria-labelledby="security-tab" aria-hidden="true">
         <div class="section-content">
-          <div class="feed-grid" id="security-grid"></div>
+          <div class="feed-grid" id="security-grid" role="feed" aria-label="Security news feeds"></div>
         </div>
       </section>
 
       <!-- Subreddits Section -->
-      <section class="section" id="subreddits-section" data-section="subreddits">
+      <section class="section" id="subreddits-section" data-section="subreddits" role="tabpanel" aria-labelledby="subreddits-tab" aria-hidden="true">
         <div class="section-content">
-          <div class="feed-grid" id="subreddits-grid"></div>
+          <div class="feed-grid" id="subreddits-grid" role="feed" aria-label="Subreddit feeds"></div>
         </div>
       </section>
 
       <!-- Twitch Section -->
-      <section class="section" id="twitch-section" data-section="twitch">
+      <section class="section" id="twitch-section" data-section="twitch" role="tabpanel" aria-labelledby="twitch-tab" aria-hidden="true">
         <div class="section-content">
-          <div class="feed-grid" id="twitch-grid"></div>
+          <div class="feed-grid" id="twitch-grid" role="feed" aria-label="Twitch channel feeds"></div>
         </div>
       </section>
     </div>
   </main>
 
   <!-- Offline Feeds Section -->
-  <section class="offline-section" id="offline-section" style="display: none;">
-    <div class="offline-header" onclick="toggleOfflineSection()">
-      <h2>⚠️ Offline Feeds (<span id="offline-count">0</span>)</h2>
-      <span class="collapse-indicator">▼</span>
+  <section class="offline-section" id="offline-section" style="display: none;" aria-label="Offline feeds">
+    <div class="offline-header" onclick="toggleOfflineSection()" role="button" tabindex="0" aria-expanded="false" aria-controls="offline-content" onkeypress="if(event.key==='Enter'||event.key===' ')toggleOfflineSection()">
+      <h2>⚠️ Offline Feeds (<span id="offline-count" aria-live="polite">0</span>)</h2>
+      <span class="collapse-indicator" aria-hidden="true">▼</span>
     </div>
-    <div class="offline-content" id="offline-content">
+    <div class="offline-content" id="offline-content" aria-label="List of offline feeds">
       <div class="feed-grid" id="offline-grid"></div>
     </div>
   </section>
 
   <!-- Load More Modal -->
-  <div class="modal-overlay" id="modal-overlay">
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
     <div class="modal">
       <div class="modal-header">
         <h3 id="modal-title">Feed Title</h3>
         <button class="modal-close" id="modal-close" aria-label="Close modal">✕</button>
       </div>
-      <div class="modal-body" id="modal-body">
+      <div class="modal-body" id="modal-body" role="feed" aria-label="Additional feed items">
         <!-- Feed items will be loaded here -->
       </div>
-      <div class="modal-loading" id="modal-loading" style="display: none;">
-        <div class="loading-spinner"></div>
+      <div class="modal-loading" id="modal-loading" style="display: none;" aria-live="polite" aria-busy="true">
+        <div class="loading-spinner" aria-hidden="true"></div>
         <p>Loading more posts...</p>
       </div>
     </div>
   </div>
 
   <footer class="footer">
-    <p>RSS Dashboard &copy; <span id="year"></span> | Powered by Vercel</p>
+    <p>PrawnFeeds &copy; <span id="year"></span> | Powered by Vercel</p>
   </footer>
 
   <script src="/feeds.js"></script>

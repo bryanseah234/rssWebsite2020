@@ -1,6 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
-  <rect width="256" height="256" rx="55" ry="55" fill="#FF6600"/>
-  <circle cx="68" cy="189" r="28" fill="#FFF"/>
-  <path d="M160 213h-34a82 82 0 0 0-82-82V97a116 116 0 0 1 116 116z" fill="#FFF"/>
-  <path d="M184 213a140 140 0 0 0-140-140V38a175 175 0 0 1 175 175z" fill="#FFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Minimalist newspaper icon - monochrome design -->
+  <rect x="4" y="4" width="24" height="24" rx="2" stroke="currentColor" stroke-width="2" fill="none"/>
+  
+  <!-- Header line (title) -->
+  <line x1="8" y1="9" x2="24" y2="9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- Content lines -->
+  <line x1="8" y1="14" x2="24" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="8" y1="18" x2="20" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="8" y1="22" x2="24" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
