@@ -1,0 +1,652 @@
+/**
+ * RSS Dashboard - Main Application Logic
+ * Handles swipeable navigation, modal, infinite scroll, and feed loading
+ */
+
+// Constants
+const CONCURRENCY_LIMIT = 6;
+const API_ENDPOINT = '/api/rss';
+const EXTENDED_FETCH_LIMIT = 20;
+const MODAL_LOAD_INCREMENT = 10;
+
+// State
+let currentSection = 'youtube';
+let loadedFeeds = 0;
+let totalFeeds = 0;
+const failedFeeds = [];
+const feedDataCache = new Map();
+const sectionScrollPositions = {};
+
+// Touch handling state
+let touchStartX = 0;
+let touchStartY = 0;
+let touchCurrentX = 0;
+let isSwiping = false;
+
+/**
+ * Initialize the application
+ */
+async function init() {
+  // Set current year
+  document.getElementById('year').textContent = new Date().getFullYear();
+  
+  // Setup sections and load feeds
+  await setupSections();
+  
+  // Setup event listeners
+  setupTabNavigation();
+  setupTouchNavigation();
+  setupKeyboardNavigation();
+  setupModal();
+  
+  // Load initial section (YouTube)
+  switchSection('youtube');
+  
+  console.log(`[RSS Dashboard] Initialized with ${totalFeeds} feeds`);
+}
+
+/**
+ * Setup all sections and create feed cards
+ */
+async function setupSections() {
+  const feedConfigs = [];
+  
+  // YouTube section
+  if (window.FEEDS?.youtube) {
+    const grid = document.getElementById('youtube-grid');
+    FEEDS.youtube.forEach(feed => {
+      const card = createFeedCard(feed.name, 'youtube');
+      grid.appendChild(card);
+      feedConfigs.push({ feed, card });
+    });
+  }
+  
+  // Blogs section
+  if (window.FEEDS?.blogs) {
+    const grid = document.getElementById('blogs-grid');
+    FEEDS.blogs.forEach(feed => {
+      const card = createFeedCard(feed.name, 'blogs');
+      grid.appendChild(card);
+      feedConfigs.push({ feed, card });
+    });
+  }
+  
+  // Security section
+  if (window.FEEDS?.security) {
+    const grid = document.getElementById('security-grid');
+    FEEDS.security.forEach(feed => {
+      const card = createFeedCard(feed.name, 'security');
+      grid.appendChild(card);
+      feedConfigs.push({ feed, card });
+    });
+  }
+  
+  // Subreddits section
+  if (window.FEEDS?.subreddits) {
+    const grid = document.getElementById('subreddits-grid');
+    FEEDS.subreddits.forEach(feed => {
+      const card = createFeedCard(feed.name, 'subreddits');
+      grid.appendChild(card);
+      feedConfigs.push({ feed, card });
+    });
+  }
+  
+  // Twitch section
+  if (window.FEEDS?.twitch) {
+    const grid = document.getElementById('twitch-grid');
+    FEEDS.twitch.forEach(feed => {
+      const card = createFeedCard(feed.name, 'twitch');
+      grid.appendChild(card);
+      feedConfigs.push({ feed, card });
+    });
+  }
+  
+  totalFeeds = feedConfigs.length;
+  updateFeedCount();
+  
+  // Fetch all feeds with concurrency limit
+  await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
+  
+  // Display offline feeds section if any
+  if (failedFeeds.length > 0) {
+    displayOfflineFeeds();
+  }
+}
+
+/**
+ * Create a feed card element
+ */
+function createFeedCard(name, category) {
+  const card = document.createElement('div');
+  card.className = 'feed-card loading';
+  card.dataset.name = name.toLowerCase();
+  card.dataset.category = category;
+  card.innerHTML = `
+    <div class="feed-card-header">
+      <span class="feed-card-title">${escapeHtml(name)}</span>
+      <span class="feed-card-count">...</span>
+    </div>
+    <ul class="feed-items">
+      <li class="loading-skeleton">
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+        <div class="skeleton-line"></div>
+      </li>
+    </ul>
+  `;
+  return card;
+}
+
+/**
+ * Fetch a single feed
+ */
+async function fetchFeed(feed, card) {
+  try {
+    const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=${EXTENDED_FETCH_LIMIT}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Cache the feed data
+    feedDataCache.set(feed.name, data);
+    
+    updateFeedCard(card, data, feed.limit);
+  } catch (error) {
+    showFeedError(card, error.message, feed);
+  } finally {
+    loadedFeeds++;
+    updateFeedCount();
+  }
+}
+
+/**
+ * Fetch feeds with concurrency limit
+ */
+async function fetchFeedsWithConcurrency(feedConfigs, limit) {
+  const queue = [...feedConfigs];
+  const executing = [];
+  
+  while (queue.length > 0 || executing.length > 0) {
+    while (executing.length < limit && queue.length > 0) {
+      const { feed, card } = queue.shift();
+      const promise = fetchFeed(feed, card).then(() => {
+        executing.splice(executing.indexOf(promise), 1);
+      });
+      executing.push(promise);
+    }
+    
+    if (executing.length > 0) {
+      await Promise.race(executing);
+    }
+  }
+}
+
+/**
+ * Update feed card with data
+ */
+function updateFeedCard(card, data, initialLimit = 5) {
+  card.classList.remove('loading');
+  
+  const countEl = card.querySelector('.feed-card-count');
+  const itemsEl = card.querySelector('.feed-items');
+  
+  if (data.items.length === 0) {
+    itemsEl.innerHTML = '<li class="error-message">No items available</li>';
+    countEl.textContent = '0 items';
+    return;
+  }
+  
+  // Store all items in dataset
+  card.dataset.allItems = JSON.stringify(data.items);
+  card.dataset.visibleCount = Math.min(initialLimit, data.items.length);
+  
+  // Show initial items
+  const initialItems = data.items.slice(0, initialLimit);
+  itemsEl.innerHTML = initialItems.map((item, index) => `
+    <li class="feed-item" data-index="${index}">
+      <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
+        <div class="feed-item-title">${escapeHtml(item.title)}</div>
+        ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+        <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+      </a>
+    </li>
+  `).join('');
+  
+  // Add load more button if needed
+  if (data.items.length > initialLimit) {
+    const loadMoreDiv = document.createElement('div');
+    loadMoreDiv.className = 'feed-card-footer';
+    loadMoreDiv.innerHTML = `<button class="load-more-btn" data-feed-name="${escapeHtml(card.dataset.name)}">Load More (${data.items.length - initialLimit} more)</button>`;
+    card.appendChild(loadMoreDiv);
+    
+    // Add click handler
+    loadMoreDiv.querySelector('.load-more-btn').addEventListener('click', (e) => {
+      e.preventDefault();
+      openModal(card.dataset.name, data);
+    });
+  }
+  
+  countEl.textContent = `${initialItems.length} of ${data.items.length} items`;
+}
+
+/**
+ * Show error state on feed card
+ */
+function showFeedError(card, error, feed) {
+  card.classList.remove('loading');
+  card.classList.add('error');
+  
+  const countEl = card.querySelector('.feed-card-count');
+  const itemsEl = card.querySelector('.feed-items');
+  
+  countEl.textContent = 'Error';
+  itemsEl.innerHTML = '<li class="error-message">Failed to load feed</li>';
+  
+  // Track failed feed for grouping
+  failedFeeds.push({
+    name: feed.name,
+    url: feed.url,
+    category: card.dataset.category,
+    error: error
+  });
+  
+  console.error(`[Feed Error] ${card.dataset.name}:`, error);
+}
+
+/**
+ * Display offline feeds section
+ */
+function displayOfflineFeeds() {
+  const offlineSection = document.getElementById('offline-section');
+  const offlineGrid = document.getElementById('offline-grid');
+  const offlineCount = document.getElementById('offline-count');
+  
+  offlineCount.textContent = failedFeeds.length;
+  
+  offlineGrid.innerHTML = failedFeeds.map(feed => `
+    <div class="feed-card error offline-card">
+      <div class="feed-card-header">
+        <span class="feed-card-title">${escapeHtml(feed.name)}</span>
+        <span class="feed-card-count">Error</span>
+      </div>
+      <ul class="feed-items">
+        <li class="error-message">Failed to load feed</li>
+        <li class="error-message" style="font-size: 11px; color: var(--text-muted);">Category: ${feed.category}</li>
+        <li class="error-message" style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(feed.error)}</li>
+      </ul>
+    </div>
+  `).join('');
+  
+  offlineSection.style.display = 'block';
+}
+
+/**
+ * Toggle offline feeds section
+ */
+function toggleOfflineSection() {
+  const content = document.getElementById('offline-content');
+  const indicator = document.querySelector('.offline-header .collapse-indicator');
+  
+  if (content.classList.contains('expanded')) {
+    content.classList.remove('expanded');
+    indicator.textContent = '▼';
+  } else {
+    content.classList.add('expanded');
+    indicator.textContent = '▲';
+  }
+}
+
+// Make it globally accessible for onclick
+window.toggleOfflineSection = toggleOfflineSection;
+
+/**
+ * Setup tab navigation
+ */
+function setupTabNavigation() {
+  const tabs = document.querySelectorAll('.tab-btn');
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const section = tab.dataset.section;
+      switchSection(section);
+    });
+  });
+}
+
+/**
+ * Setup touch navigation for swipe gestures
+ */
+function setupTouchNavigation() {
+  const wrapper = document.getElementById('sections-wrapper');
+  const container = document.querySelector('.sections-container');
+  
+  container.addEventListener('touchstart', (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    isSwiping = false;
+  }, { passive: true });
+  
+  container.addEventListener('touchmove', (e) => {
+    if (!touchStartX) return;
+    
+    touchCurrentX = e.touches[0].clientX;
+    const touchCurrentY = e.touches[0].clientY;
+    
+    const diffX = touchCurrentX - touchStartX;
+    const diffY = touchCurrentY - touchStartY;
+    
+    // Detect horizontal swipe (more horizontal than vertical)
+    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+      isSwiping = true;
+      container.classList.add('swiping');
+    }
+  }, { passive: true });
+  
+  container.addEventListener('touchend', (e) => {
+    if (!isSwiping) {
+      touchStartX = 0;
+      touchStartY = 0;
+      container.classList.remove('swiping');
+      return;
+    }
+    
+    const diffX = touchCurrentX - touchStartX;
+    const threshold = 50; // Minimum swipe distance
+    
+    if (Math.abs(diffX) > threshold) {
+      if (diffX > 0) {
+        // Swipe right - previous section
+        navigateToPreviousSection();
+      } else {
+        // Swipe left - next section
+        navigateToNextSection();
+      }
+    }
+    
+    touchStartX = 0;
+    touchStartY = 0;
+    touchCurrentX = 0;
+    isSwiping = false;
+    container.classList.remove('swiping');
+  }, { passive: true });
+}
+
+/**
+ * Setup keyboard navigation
+ */
+function setupKeyboardNavigation() {
+  document.addEventListener('keydown', (e) => {
+    // Only handle arrow keys when modal is not open
+    if (document.getElementById('modal-overlay').classList.contains('active')) {
+      return;
+    }
+    
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateToPreviousSection();
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateToNextSection();
+    }
+  });
+}
+
+/**
+ * Navigate to previous section
+ */
+function navigateToPreviousSection() {
+  const sections = ['youtube', 'blogs', 'security', 'subreddits', 'twitch'];
+  const currentIndex = sections.indexOf(currentSection);
+  
+  if (currentIndex > 0) {
+    switchSection(sections[currentIndex - 1]);
+  }
+}
+
+/**
+ * Navigate to next section
+ */
+function navigateToNextSection() {
+  const sections = ['youtube', 'blogs', 'security', 'subreddits', 'twitch'];
+  const currentIndex = sections.indexOf(currentSection);
+  
+  if (currentIndex < sections.length - 1) {
+    switchSection(sections[currentIndex + 1]);
+  }
+}
+
+/**
+ * Switch to a different section
+ */
+function switchSection(sectionName) {
+  // Save scroll position of current section
+  const currentSectionEl = document.querySelector(`#${currentSection}-section`);
+  if (currentSectionEl) {
+    sectionScrollPositions[currentSection] = window.scrollY;
+  }
+  
+  // Update active states
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  
+  const newSection = document.getElementById(`${sectionName}-section`);
+  const newTab = document.querySelector(`.tab-btn[data-section="${sectionName}"]`);
+  
+  if (newSection && newTab) {
+    newSection.classList.add('active');
+    newTab.classList.add('active');
+    currentSection = sectionName;
+    
+    // Restore scroll position
+    setTimeout(() => {
+      const savedPosition = sectionScrollPositions[sectionName] || 0;
+      window.scrollTo(0, savedPosition);
+    }, 50);
+  }
+}
+
+/**
+ * Setup modal functionality
+ */
+function setupModal() {
+  const overlay = document.getElementById('modal-overlay');
+  const closeBtn = document.getElementById('modal-close');
+  
+  // Close on button click
+  closeBtn.addEventListener('click', closeModal);
+  
+  // Close on overlay click (outside modal)
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeModal();
+    }
+  });
+  
+  // Close on ESC key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('active')) {
+      closeModal();
+    }
+  });
+  
+  // Setup infinite scroll
+  const modalBody = document.getElementById('modal-body');
+  modalBody.addEventListener('scroll', handleModalScroll);
+}
+
+let modalLoadOffset = 0;
+let modalTotalItems = 0;
+let modalIsLoading = false;
+let modalItems = [];
+
+/**
+ * Open modal with feed data
+ */
+function openModal(feedName, feedData) {
+  const overlay = document.getElementById('modal-overlay');
+  const title = document.getElementById('modal-title');
+  const body = document.getElementById('modal-body');
+  
+  // Find feed name in cache
+  const cacheKey = Object.keys(window.FEEDS).find(category => 
+    window.FEEDS[category].some(f => f.name.toLowerCase() === feedName.toLowerCase())
+  );
+  
+  if (cacheKey) {
+    const feed = window.FEEDS[cacheKey].find(f => f.name.toLowerCase() === feedName.toLowerCase());
+    title.textContent = feed.name;
+  } else {
+    title.textContent = feedName;
+  }
+  
+  // Reset modal state
+  modalLoadOffset = MODAL_LOAD_INCREMENT;
+  modalItems = feedData.items;
+  modalTotalItems = feedData.items.length;
+  modalIsLoading = false;
+  
+  // Load initial items (skip first 5 that are already shown in card)
+  const initialItems = modalItems.slice(5, modalLoadOffset);
+  body.innerHTML = '<ul class="feed-items">' + 
+    initialItems.map((item, index) => createFeedItemHTML(item, index + 5)).join('') +
+    '</ul>';
+  
+  // Show modal
+  overlay.classList.add('active');
+  document.body.classList.add('modal-open');
+  
+  // Reset scroll position
+  body.scrollTop = 0;
+}
+
+/**
+ * Close modal
+ */
+function closeModal() {
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.remove('active');
+  document.body.classList.remove('modal-open');
+}
+
+/**
+ * Handle modal scroll for infinite loading
+ */
+function handleModalScroll() {
+  const body = document.getElementById('modal-body');
+  const loading = document.getElementById('modal-loading');
+  
+  // Check if near bottom (within 200px)
+  const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 200;
+  
+  if (nearBottom && !modalIsLoading && modalLoadOffset < modalTotalItems) {
+    modalIsLoading = true;
+    loading.style.display = 'block';
+    
+    // Simulate loading delay (can be adjusted)
+    setTimeout(() => {
+      loadMoreModalItems();
+      loading.style.display = 'none';
+      modalIsLoading = false;
+    }, 300);
+  }
+}
+
+/**
+ * Load more items in modal
+ */
+function loadMoreModalItems() {
+  const body = document.getElementById('modal-body');
+  const ul = body.querySelector('.feed-items');
+  
+  const nextOffset = Math.min(modalLoadOffset + MODAL_LOAD_INCREMENT, modalTotalItems);
+  const newItems = modalItems.slice(modalLoadOffset, nextOffset);
+  
+  newItems.forEach((item, index) => {
+    const li = document.createElement('li');
+    li.className = 'feed-item';
+    li.innerHTML = createFeedItemHTML(item, modalLoadOffset + index);
+    ul.appendChild(li);
+  });
+  
+  modalLoadOffset = nextOffset;
+}
+
+/**
+ * Create feed item HTML
+ */
+function createFeedItemHTML(item, index) {
+  return `
+    <li class="feed-item" data-index="${index}">
+      <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
+        <div class="feed-item-title">${escapeHtml(item.title)}</div>
+        ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+        <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+      </a>
+    </li>
+  `;
+}
+
+/**
+ * Update the feed count display
+ */
+function updateFeedCount() {
+  const countEl = document.getElementById('feed-count');
+  if (loadedFeeds < totalFeeds) {
+    countEl.textContent = `Loading ${loadedFeeds}/${totalFeeds} feeds...`;
+  } else {
+    countEl.textContent = `${totalFeeds} feeds loaded`;
+  }
+}
+
+/**
+ * Format date to relative time
+ */
+function formatRelativeTime(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return dateStr;
+    
+    const now = new Date();
+    const diffMs = now - date;
+    const diffSecs = Math.floor(diffMs / 1000);
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffWeeks = Math.floor(diffDays / 7);
+    
+    if (diffSecs < 60) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffWeeks < 4) return `${diffWeeks}w ago`;
+    
+    return date.toLocaleDateString();
+  } catch {
+    return dateStr;
+  }
+}
+
+/**
+ * Truncate text to max length
+ */
+function truncateText(text, maxLength = 150) {
+  if (!text || text.length <= maxLength) return text;
+  return text.slice(0, maxLength).trim() + '...';
+}
+
+/**
+ * Escape HTML to prevent XSS
+ */
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// Start the app when DOM is ready
+document.addEventListener('DOMContentLoaded', init);
