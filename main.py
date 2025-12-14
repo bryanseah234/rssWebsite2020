@@ -19,6 +19,9 @@ REDDIT_MAX_WORKERS = 6  # Max concurrent Reddit fetches
 YOUTUBE_MAX_WORKERS = 6  # Max concurrent YouTube fetches
 TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
 
+# Feed fetching configuration
+MAX_FETCH_ITEMS = 50  # Maximum items to fetch per feed for load-more support
+
 
 def log(message):
     """Helper function for logging"""
@@ -85,13 +88,13 @@ def load_feeds_config():
         return {"sections": [], "subreddits": []}
 
 
-def fetch_rss_feed(url, limit=5, fetch_all=True):
+def fetch_rss_feed(url, limit=5, enable_load_more=True):
     """Fetch and parse RSS feed
 
     Args:
         url: Feed URL
         limit: Initial display limit
-        fetch_all: If True, fetch up to 50 items for load-more; if False, only fetch limit
+        enable_load_more: If True, fetch up to MAX_FETCH_ITEMS for load-more; if False, only fetch limit
 
     Returns:
         dict with 'items' (all items), 'error' flag, and 'total_count'
@@ -120,7 +123,7 @@ def fetch_rss_feed(url, limit=5, fetch_all=True):
         log(f"Parsed {len(feed.entries)} entries from {url}")
 
         # Fetch more items if requested (for load-more feature)
-        max_items = 50 if fetch_all else limit
+        max_items = MAX_FETCH_ITEMS if enable_load_more else limit
         items = []
         for entry in feed.entries[:max_items]:
             published = entry.get('published', entry.get('updated', ''))

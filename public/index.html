@@ -60,6 +60,7 @@
     // Constants
     const CONCURRENCY_LIMIT = 6;
     const API_ENDPOINT = '/api/rss';
+    const EXTENDED_FETCH_LIMIT = 20; // Fetch more items for load-more support
 
     // State
     let loadedFeeds = 0;
@@ -226,7 +227,7 @@
     async function fetchFeed(feed, card) {
       try {
         // Fetch more items for load-more support
-        const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=20`;
+        const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=${EXTENDED_FETCH_LIMIT}`;
         const response = await fetch(url);
         
         if (!response.ok) {

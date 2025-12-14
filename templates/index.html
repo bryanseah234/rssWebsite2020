@@ -67,6 +67,48 @@
                 </div>
             {% endif %}
 
+            {# Macro for rendering RSS feed widget with load-more support #}
+            {% macro render_feed_widget(feed, section_title) %}
+            <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
+                <div class="widget-header">
+                    <h3>{{ feed.name }}</h3>
+                    <span class="widget-badge">{{ section_title }}</span>
+                </div>
+                <div class="widget-content">
+                    {% if feed['items']|length > 0 %}
+                        <ul class="feed-list" data-visible-count="{{ feed['items']|length }}">
+                            {% for item in feed['all_items'] %}
+                                <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
+                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
+                                        <div class="feed-title">{{ item.title }}</div>
+                                        {% if item.published %}
+                                            <div class="feed-time">{{ item.published }}</div>
+                                        {% endif %}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        {% if feed['all_items']|length > feed['items']|length %}
+                        <div class="widget-footer">
+                            <button class="load-more-btn" data-feed-name="{{ feed.name }}">
+                                Load More ({{ feed['all_items']|length - feed['items']|length }} more)
+                            </button>
+                        </div>
+                        {% else %}
+                        <div class="widget-footer">
+                            <small>Loaded {{ feed['items']|length }} items</small>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="empty-state">
+                            <span class="status-icon">⏳</span>
+                            <p>No items found</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endmacro %}
+
             <!-- Twitch Section -->
             <section class="feed-section">
                 <h2 class="section-title">🎮 Twitch</h2>
@@ -144,44 +186,7 @@
                     {% for section in config.sections if section.title == "Blogs" or "blog" in (section.title|lower) %}
                         {% for feed in section.feeds %}
                             {% if not feed.error %}
-                            <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
-                                <div class="widget-header">
-                                    <h3>{{ feed.name }}</h3>
-                                    <span class="widget-badge">{{ section.title }}</span>
-                                </div>
-                                <div class="widget-content">
-                                    {% if feed['items']|length > 0 %}
-                                        <ul class="feed-list" data-visible-count="{{ feed['items']|length }}">
-                                            {% for item in feed['all_items'] %}
-                                                <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
-                                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                                        <div class="feed-title">{{ item.title }}</div>
-                                                        {% if item.published %}
-                                                            <div class="feed-time">{{ item.published }}</div>
-                                                        {% endif %}
-                                                    </a>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                        {% if feed['all_items']|length > feed['items']|length %}
-                                        <div class="widget-footer">
-                                            <button class="load-more-btn" data-feed-name="{{ feed.name }}">
-                                                Load More ({{ feed['all_items']|length - feed['items']|length }} more)
-                                            </button>
-                                        </div>
-                                        {% else %}
-                                        <div class="widget-footer">
-                                            <small>Loaded {{ feed['items']|length }} items</small>
-                                        </div>
-                                        {% endif %}
-                                    {% else %}
-                                        <div class="empty-state">
-                                            <span class="status-icon">⏳</span>
-                                            <p>No items found</p>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
+                                {{ render_feed_widget(feed, section.title) }}
                             {% endif %}
                         {% endfor %}
                     {% endfor %}
@@ -195,44 +200,7 @@
                     {% for section in config.sections if "security" in (section.title|lower) or "tech" in (section.title|lower) %}
                         {% for feed in section.feeds %}
                             {% if not feed.error %}
-                            <div class="widget" data-feed="{{ feed.name }}" data-feed-url="{{ feed.url }}">
-                                <div class="widget-header">
-                                    <h3>{{ feed.name }}</h3>
-                                    <span class="widget-badge">{{ section.title }}</span>
-                                </div>
-                                <div class="widget-content">
-                                    {% if feed['items']|length > 0 %}
-                                        <ul class="feed-list" data-visible-count="{{ feed['items']|length }}">
-                                            {% for item in feed['all_items'] %}
-                                                <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
-                                                    <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                                        <div class="feed-title">{{ item.title }}</div>
-                                                        {% if item.published %}
-                                                            <div class="feed-time">{{ item.published }}</div>
-                                                        {% endif %}
-                                                    </a>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                        {% if feed['all_items']|length > feed['items']|length %}
-                                        <div class="widget-footer">
-                                            <button class="load-more-btn" data-feed-name="{{ feed.name }}">
-                                                Load More ({{ feed['all_items']|length - feed['items']|length }} more)
-                                            </button>
-                                        </div>
-                                        {% else %}
-                                        <div class="widget-footer">
-                                            <small>Loaded {{ feed['items']|length }} items</small>
-                                        </div>
-                                        {% endif %}
-                                    {% else %}
-                                        <div class="empty-state">
-                                            <span class="status-icon">⏳</span>
-                                            <p>No items found</p>
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
+                                {{ render_feed_widget(feed, section.title) }}
                             {% endif %}
                         {% endfor %}
                     {% endfor %}
