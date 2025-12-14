@@ -295,10 +295,12 @@ function toggleOfflineSection() {
   if (content.classList.contains('expanded')) {
     content.classList.remove('expanded');
     header.classList.remove('expanded');
+    header.setAttribute('aria-expanded', 'false');
     indicator.textContent = '▼';
   } else {
     content.classList.add('expanded');
     header.classList.add('expanded');
+    header.setAttribute('aria-expanded', 'true');
     indicator.textContent = '▲';
   }
 }
@@ -432,16 +434,24 @@ function switchSection(sectionName) {
     sectionScrollPositions[currentSection] = window.scrollY;
   }
   
-  // Update active states
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  // Update active states and ARIA attributes
+  document.querySelectorAll('.section').forEach(s => {
+    s.classList.remove('active');
+    s.setAttribute('aria-hidden', 'true');
+  });
+  document.querySelectorAll('.tab-btn').forEach(t => {
+    t.classList.remove('active');
+    t.setAttribute('aria-selected', 'false');
+  });
   
   const newSection = document.getElementById(`${sectionName}-section`);
   const newTab = document.querySelector(`.tab-btn[data-section="${sectionName}"]`);
   
   if (newSection && newTab) {
     newSection.classList.add('active');
+    newSection.setAttribute('aria-hidden', 'false');
     newTab.classList.add('active');
+    newTab.setAttribute('aria-selected', 'true');
     currentSection = sectionName;
     
     // Restore scroll position
@@ -548,11 +558,13 @@ function handleModalScroll() {
   if (nearBottom && !modalIsLoading && modalLoadOffset < modalTotalItems) {
     modalIsLoading = true;
     loading.style.display = 'block';
+    loading.setAttribute('aria-busy', 'true');
     
     // Simulate loading delay (can be adjusted)
     setTimeout(() => {
       loadMoreModalItems();
       loading.style.display = 'none';
+      loading.setAttribute('aria-busy', 'false');
       modalIsLoading = false;
     }, 300);
   }
