@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A modern, mobile-responsive RSS dashboard">
+  <meta name="description" content="A modern, mobile-first RSS dashboard with swipeable navigation">
   <title>RSS Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css">
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/favicon.svg">
 </head>
 <body>
@@ -33,400 +33,105 @@
     </div>
   </header>
 
-  <main class="main-container">
-    <section id="blogs-section">
-      <div class="section-header">
-        <h2>Blogs</h2>
-        <span class="section-badge" id="blogs-count">0</span>
-      </div>
-      <div class="feed-grid" id="blogs-grid"></div>
-    </section>
+  <!-- Tab Navigation -->
+  <nav class="tab-nav">
+    <div class="tab-container">
+      <button class="tab-btn active" data-section="youtube">
+        <span class="tab-label">YouTube</span>
+        <span class="tab-count" id="youtube-tab-count">6</span>
+      </button>
+      <button class="tab-btn" data-section="blogs">
+        <span class="tab-label">Blogs</span>
+        <span class="tab-count" id="blogs-tab-count">25</span>
+      </button>
+      <button class="tab-btn" data-section="security">
+        <span class="tab-label">Security</span>
+        <span class="tab-count" id="security-tab-count">12</span>
+      </button>
+      <button class="tab-btn" data-section="subreddits">
+        <span class="tab-label">Subreddits</span>
+        <span class="tab-count" id="subreddits-tab-count">6</span>
+      </button>
+      <button class="tab-btn" data-section="twitch">
+        <span class="tab-label">Twitch</span>
+        <span class="tab-count" id="twitch-tab-count">15</span>
+      </button>
+    </div>
+  </nav>
 
-    <section id="security-section">
-      <div class="section-header">
-        <h2>Security & Tech News</h2>
-        <span class="section-badge" id="security-count">0</span>
-      </div>
-      <div class="feed-grid" id="security-grid"></div>
-    </section>
+  <!-- Swipeable Sections Container -->
+  <main class="sections-container">
+    <div class="sections-wrapper" id="sections-wrapper">
+      <!-- YouTube Section -->
+      <section class="section active" id="youtube-section" data-section="youtube">
+        <div class="section-content">
+          <div class="feed-grid" id="youtube-grid"></div>
+        </div>
+      </section>
+
+      <!-- Blogs Section -->
+      <section class="section" id="blogs-section" data-section="blogs">
+        <div class="section-content">
+          <div class="feed-grid" id="blogs-grid"></div>
+        </div>
+      </section>
+
+      <!-- Security Section -->
+      <section class="section" id="security-section" data-section="security">
+        <div class="section-content">
+          <div class="feed-grid" id="security-grid"></div>
+        </div>
+      </section>
+
+      <!-- Subreddits Section -->
+      <section class="section" id="subreddits-section" data-section="subreddits">
+        <div class="section-content">
+          <div class="feed-grid" id="subreddits-grid"></div>
+        </div>
+      </section>
+
+      <!-- Twitch Section -->
+      <section class="section" id="twitch-section" data-section="twitch">
+        <div class="section-content">
+          <div class="feed-grid" id="twitch-grid"></div>
+        </div>
+      </section>
+    </div>
   </main>
+
+  <!-- Offline Feeds Section -->
+  <section class="offline-section" id="offline-section" style="display: none;">
+    <div class="offline-header" onclick="toggleOfflineSection()">
+      <h2>⚠️ Offline Feeds (<span id="offline-count">0</span>)</h2>
+      <span class="collapse-indicator">▼</span>
+    </div>
+    <div class="offline-content" id="offline-content">
+      <div class="feed-grid" id="offline-grid"></div>
+    </div>
+  </section>
+
+  <!-- Load More Modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">Feed Title</h3>
+        <button class="modal-close" id="modal-close" aria-label="Close modal">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body">
+        <!-- Feed items will be loaded here -->
+      </div>
+      <div class="modal-loading" id="modal-loading" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Loading more posts...</p>
+      </div>
+    </div>
+  </div>
 
   <footer class="footer">
     <p>RSS Dashboard &copy; <span id="year"></span> | Powered by Vercel</p>
   </footer>
 
   <script src="/feeds.js"></script>
-  <script>
-    // Constants
-    const CONCURRENCY_LIMIT = 6;
-    const API_ENDPOINT = '/api/rss';
-    const EXTENDED_FETCH_LIMIT = 20; // Fetch more items for load-more support
-
-    // State
-    let loadedFeeds = 0;
-    let totalFeeds = 0;
-    const failedFeeds = [];
-
-    /**
-     * Format date to relative time
-     * @param {string} dateStr - ISO date string
-     * @returns {string} - Relative time string
-     */
-    function formatRelativeTime(dateStr) {
-      if (!dateStr) return '';
-      try {
-        const date = new Date(dateStr);
-        if (isNaN(date.getTime())) return dateStr;
-        
-        const now = new Date();
-        const diffMs = now - date;
-        const diffSecs = Math.floor(diffMs / 1000);
-        const diffMins = Math.floor(diffSecs / 60);
-        const diffHours = Math.floor(diffMins / 60);
-        const diffDays = Math.floor(diffHours / 24);
-        const diffWeeks = Math.floor(diffDays / 7);
-        
-        if (diffSecs < 60) return 'just now';
-        if (diffMins < 60) return `${diffMins}m ago`;
-        if (diffHours < 24) return `${diffHours}h ago`;
-        if (diffDays < 7) return `${diffDays}d ago`;
-        if (diffWeeks < 4) return `${diffWeeks}w ago`;
-        
-        return date.toLocaleDateString();
-      } catch {
-        return dateStr;
-      }
-    }
-
-    /**
-     * Truncate text to max length
-     * @param {string} text - Input text
-     * @param {number} maxLength - Maximum length
-     * @returns {string} - Truncated text
-     */
-    function truncateText(text, maxLength = 150) {
-      if (!text || text.length <= maxLength) return text;
-      return text.slice(0, maxLength).trim() + '...';
-    }
-
-    /**
-     * Create a feed card element
-     * @param {string} name - Feed name
-     * @param {string} category - Feed category
-     * @returns {HTMLElement} - Feed card element
-     */
-    function createFeedCard(name, category) {
-      const card = document.createElement('div');
-      card.className = 'feed-card loading';
-      card.dataset.name = name.toLowerCase();
-      card.dataset.category = category;
-      card.innerHTML = `
-        <div class="feed-card-header">
-          <span class="feed-card-title">${escapeHtml(name)}</span>
-          <span class="feed-card-count">...</span>
-        </div>
-        <ul class="feed-items">
-          <li class="loading-skeleton">
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line"></div>
-            <div class="skeleton-line"></div>
-          </li>
-        </ul>
-      `;
-      return card;
-    }
-
-    /**
-     * Escape HTML to prevent XSS
-     * @param {string} text - Input text
-     * @returns {string} - Escaped text
-     */
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
-
-    /**
-     * Update feed card with data
-     * @param {HTMLElement} card - Feed card element
-     * @param {object} data - Feed data with all items
-     * @param {number} initialLimit - Initial number of items to show
-     */
-    function updateFeedCard(card, data, initialLimit = 5) {
-      card.classList.remove('loading');
-      
-      const countEl = card.querySelector('.feed-card-count');
-      const itemsEl = card.querySelector('.feed-items');
-      
-      if (data.items.length === 0) {
-        itemsEl.innerHTML = '<li class="error-message">No items available</li>';
-        countEl.textContent = '0 items';
-        return;
-      }
-      
-      // Store all items in dataset
-      card.dataset.allItems = JSON.stringify(data.items);
-      card.dataset.visibleCount = Math.min(initialLimit, data.items.length);
-      
-      // Show initial items
-      const initialItems = data.items.slice(0, initialLimit);
-      itemsEl.innerHTML = initialItems.map((item, index) => `
-        <li class="feed-item" data-index="${index}">
-          <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
-            <div class="feed-item-title">${escapeHtml(item.title)}</div>
-            ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
-            <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
-          </a>
-        </li>
-      `).join('');
-      
-      // Add load more button if needed
-      if (data.items.length > initialLimit) {
-        const loadMoreDiv = document.createElement('div');
-        loadMoreDiv.className = 'feed-card-footer';
-        loadMoreDiv.innerHTML = `<button class="load-more-btn" data-feed-name="${escapeHtml(card.dataset.name)}">Load More (${data.items.length - initialLimit} more)</button>`;
-        card.appendChild(loadMoreDiv);
-      }
-      
-      countEl.textContent = `${initialItems.length} of ${data.items.length} items`;
-    }
-
-    /**
-     * Show error state on feed card
-     * @param {HTMLElement} card - Feed card element
-     * @param {string} error - Error message
-     * @param {object} feed - Feed config
-     */
-    function showFeedError(card, error, feed) {
-      card.classList.remove('loading');
-      card.classList.add('error');
-      
-      const countEl = card.querySelector('.feed-card-count');
-      const itemsEl = card.querySelector('.feed-items');
-      
-      countEl.textContent = 'Error';
-      itemsEl.innerHTML = '<li class="error-message">Failed to load feed</li>';
-      
-      // Track failed feed for grouping
-      failedFeeds.push({
-        name: feed.name,
-        url: feed.url,
-        category: card.dataset.category,
-        error: error
-      });
-      
-      console.error(`[Feed Error] ${card.dataset.name}:`, error);
-    }
-
-    /**
-     * Fetch a single feed
-     * @param {object} feed - Feed configuration
-     * @param {HTMLElement} card - Feed card element
-     */
-    async function fetchFeed(feed, card) {
-      try {
-        // Fetch more items for load-more support
-        const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=${EXTENDED_FETCH_LIMIT}`;
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        updateFeedCard(card, data, feed.limit);
-      } catch (error) {
-        showFeedError(card, error.message, feed);
-      } finally {
-        loadedFeeds++;
-        updateFeedCount();
-      }
-    }
-
-    /**
-     * Fetch feeds with concurrency limit
-     * @param {Array} feedConfigs - Array of {feed, card} objects
-     * @param {number} limit - Concurrency limit
-     */
-    async function fetchFeedsWithConcurrency(feedConfigs, limit) {
-      const queue = [...feedConfigs];
-      const executing = [];
-      
-      while (queue.length > 0 || executing.length > 0) {
-        while (executing.length < limit && queue.length > 0) {
-          const { feed, card } = queue.shift();
-          const promise = fetchFeed(feed, card).then(() => {
-            executing.splice(executing.indexOf(promise), 1);
-          });
-          executing.push(promise);
-        }
-        
-        if (executing.length > 0) {
-          await Promise.race(executing);
-        }
-      }
-    }
-
-    /**
-     * Update the feed count display
-     */
-    function updateFeedCount() {
-      const countEl = document.getElementById('feed-count');
-      if (loadedFeeds < totalFeeds) {
-        countEl.textContent = `Loading ${loadedFeeds}/${totalFeeds} feeds...`;
-      } else {
-        countEl.textContent = `${totalFeeds} feeds loaded`;
-      }
-    }
-
-    /**
-     * Initialize the app
-     */
-    async function init() {
-      // Set current year
-      document.getElementById('year').textContent = new Date().getFullYear();
-      
-      const blogsGrid = document.getElementById('blogs-grid');
-      const securityGrid = document.getElementById('security-grid');
-      
-      const feedConfigs = [];
-      
-      // Create cards for blogs
-      if (window.FEEDS?.blogs) {
-        document.getElementById('blogs-count').textContent = FEEDS.blogs.length;
-        FEEDS.blogs.forEach(feed => {
-          const card = createFeedCard(feed.name, 'blogs');
-          blogsGrid.appendChild(card);
-          feedConfigs.push({ feed, card });
-        });
-      }
-      
-      // Create cards for security feeds
-      if (window.FEEDS?.security) {
-        document.getElementById('security-count').textContent = FEEDS.security.length;
-        FEEDS.security.forEach(feed => {
-          const card = createFeedCard(feed.name, 'security');
-          securityGrid.appendChild(card);
-          feedConfigs.push({ feed, card });
-        });
-      }
-      
-      totalFeeds = feedConfigs.length;
-      updateFeedCount();
-      
-      // Fetch all feeds with concurrency limit
-      await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
-      
-      // Setup load more handlers
-      document.addEventListener('click', (e) => {
-        if (e.target.classList.contains('load-more-btn')) {
-          handleLoadMore(e.target);
-        }
-      });
-      
-      // Display offline feeds section if any
-      if (failedFeeds.length > 0) {
-        displayOfflineFeeds();
-      }
-      
-      console.log(`[RSS Dashboard] Loaded ${loadedFeeds} feeds, ${failedFeeds.length} failed`);
-    }
-    
-    /**
-     * Handle load more button click
-     * @param {HTMLElement} btn - Load more button
-     */
-    function handleLoadMore(btn) {
-      const card = btn.closest('.feed-card');
-      const allItems = JSON.parse(card.dataset.allItems || '[]');
-      const visibleCount = parseInt(card.dataset.visibleCount || '0');
-      const itemsEl = card.querySelector('.feed-items');
-      
-      // Show next 5 items
-      const newVisibleCount = Math.min(visibleCount + 5, allItems.length);
-      const newItems = allItems.slice(visibleCount, newVisibleCount);
-      
-      // Append new items
-      newItems.forEach((item, index) => {
-        const li = document.createElement('li');
-        li.className = 'feed-item';
-        li.dataset.index = visibleCount + index;
-        li.innerHTML = `
-          <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
-            <div class="feed-item-title">${escapeHtml(item.title)}</div>
-            ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
-            <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
-          </a>
-        `;
-        itemsEl.appendChild(li);
-      });
-      
-      // Update visible count
-      card.dataset.visibleCount = newVisibleCount;
-      
-      // Update button or remove it
-      const remaining = allItems.length - newVisibleCount;
-      if (remaining > 0) {
-        btn.textContent = `Load More (${remaining} more)`;
-      } else {
-        btn.parentElement.innerHTML = '<small>All items loaded</small>';
-      }
-      
-      // Update count
-      const countEl = card.querySelector('.feed-card-count');
-      countEl.textContent = `${newVisibleCount} of ${allItems.length} items`;
-    }
-    
-    /**
-     * Display offline feeds section
-     */
-    function displayOfflineFeeds() {
-      const mainContainer = document.querySelector('.main-container');
-      
-      const offlineSection = document.createElement('section');
-      offlineSection.className = 'offline-section';
-      offlineSection.innerHTML = `
-        <div class="section-header" style="cursor: pointer;" onclick="toggleOfflineSection()">
-          <h2>⚠️ Offline Feeds (${failedFeeds.length})</h2>
-          <span class="collapse-indicator" style="font-size: 12px; color: var(--text-tertiary);">▼</span>
-        </div>
-        <div class="feed-grid" id="offline-feeds-grid" style="display: none;">
-          ${failedFeeds.map(feed => `
-            <div class="feed-card error offline-card">
-              <div class="feed-card-header">
-                <span class="feed-card-title">${escapeHtml(feed.name)}</span>
-                <span class="feed-card-count">Error</span>
-              </div>
-              <ul class="feed-items">
-                <li class="error-message">Failed to load feed</li>
-                <li class="error-message" style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(feed.error)}</li>
-              </ul>
-            </div>
-          `).join('')}
-        </div>
-      `;
-      
-      mainContainer.appendChild(offlineSection);
-    }
-    
-    /**
-     * Toggle offline feeds section
-     */
-    function toggleOfflineSection() {
-      const grid = document.getElementById('offline-feeds-grid');
-      const indicator = document.querySelector('.offline-section .collapse-indicator');
-      if (grid.style.display === 'none') {
-        grid.style.display = 'grid';
-        indicator.textContent = '▲';
-      } else {
-        grid.style.display = 'none';
-        indicator.textContent = '▼';
-      }
-    }
-
-    // Start the app
-    document.addEventListener('DOMContentLoaded', init);
-  </script>
+  <script src="/app.js"></script>
 </body>
 </html>
