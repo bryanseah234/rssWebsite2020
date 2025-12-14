@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="A modern, mobile-first RSS dashboard with swipeable navigation">
-  <title>RSS Dashboard</title>
+  <title>PrawnFeeds - Modern RSS Reader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -24,7 +24,7 @@
             <path d="M4 4a16 16 0 0 1 16 16"></path>
             <circle cx="5" cy="19" r="1"></circle>
           </svg>
-          <h1>RSS Dashboard</h1>
+          <h1>PrawnFeeds</h1>
         </div>
         <div class="header-stats">
           <span id="feed-count">Loading feeds...</span>
@@ -36,23 +36,23 @@
   <!-- Tab Navigation -->
   <nav class="tab-nav" role="navigation" aria-label="Feed section navigation">
     <div class="tab-container" role="tablist">
-      <button class="tab-btn active" data-section="youtube" role="tab" aria-selected="true" aria-controls="youtube-section">
+      <button id="youtube-tab" class="tab-btn active" data-section="youtube" role="tab" aria-selected="true" aria-controls="youtube-section">
         <span class="tab-label">YouTube</span>
         <span class="tab-count" id="youtube-tab-count" aria-label="6 feeds">6</span>
       </button>
-      <button class="tab-btn" data-section="blogs" role="tab" aria-selected="false" aria-controls="blogs-section">
+      <button id="blogs-tab" class="tab-btn" data-section="blogs" role="tab" aria-selected="false" aria-controls="blogs-section">
         <span class="tab-label">Blogs</span>
         <span class="tab-count" id="blogs-tab-count" aria-label="25 feeds">25</span>
       </button>
-      <button class="tab-btn" data-section="security" role="tab" aria-selected="false" aria-controls="security-section">
+      <button id="security-tab" class="tab-btn" data-section="security" role="tab" aria-selected="false" aria-controls="security-section">
         <span class="tab-label">Security</span>
         <span class="tab-count" id="security-tab-count" aria-label="12 feeds">12</span>
       </button>
-      <button class="tab-btn" data-section="subreddits" role="tab" aria-selected="false" aria-controls="subreddits-section">
+      <button id="subreddits-tab" class="tab-btn" data-section="subreddits" role="tab" aria-selected="false" aria-controls="subreddits-section">
         <span class="tab-label">Subreddits</span>
         <span class="tab-count" id="subreddits-tab-count" aria-label="6 feeds">6</span>
       </button>
-      <button class="tab-btn" data-section="twitch" role="tab" aria-selected="false" aria-controls="twitch-section">
+      <button id="twitch-tab" class="tab-btn" data-section="twitch" role="tab" aria-selected="false" aria-controls="twitch-section">
         <span class="tab-label">Twitch</span>
         <span class="tab-count" id="twitch-tab-count" aria-label="15 feeds">15</span>
       </button>
@@ -128,7 +128,7 @@
   </div>
 
   <footer class="footer">
-    <p>RSS Dashboard &copy; <span id="year"></span> | Powered by Vercel</p>
+    <p>PrawnFeeds &copy; <span id="year"></span> | Powered by Vercel</p>
   </footer>
 
   <script src="/feeds.js"></script>
