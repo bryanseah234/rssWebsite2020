@@ -241,8 +241,8 @@ module.exports = async (req, res) => {
     return res.status(400).json({ error: 'Invalid feedUrl format' });
   }
   
-  // Parse and validate limit
-  const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 20);
+  // Parse and validate limit (increased to 50 for modal infinite scroll support)
+  const parsedLimit = Math.min(Math.max(parseInt(limit, 10) || 5, 1), 50);
   
   try {
     const data = await fetchFeed(feedUrl, parsedLimit);
