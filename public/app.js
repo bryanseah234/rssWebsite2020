@@ -289,13 +289,16 @@ function displayOfflineFeeds() {
  */
 function toggleOfflineSection() {
   const content = document.getElementById('offline-content');
+  const header = document.querySelector('.offline-header');
   const indicator = document.querySelector('.offline-header .collapse-indicator');
   
   if (content.classList.contains('expanded')) {
     content.classList.remove('expanded');
+    header.classList.remove('expanded');
     indicator.textContent = '▼';
   } else {
     content.classList.add('expanded');
+    header.classList.add('expanded');
     indicator.textContent = '▲';
   }
 }
@@ -512,7 +515,7 @@ function openModal(feedName, feedData) {
   // Load initial items (skip first 5 that are already shown in card)
   const initialItems = modalItems.slice(5, modalLoadOffset);
   body.innerHTML = '<ul class="feed-items">' + 
-    initialItems.map((item, index) => createFeedItemHTML(item, index + 5)).join('') +
+    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 5}">${createFeedItemHTML(item, index + 5)}</li>`).join('') +
     '</ul>';
   
   // Show modal
@@ -568,6 +571,7 @@ function loadMoreModalItems() {
   newItems.forEach((item, index) => {
     const li = document.createElement('li');
     li.className = 'feed-item';
+    li.dataset.index = modalLoadOffset + index;
     li.innerHTML = createFeedItemHTML(item, modalLoadOffset + index);
     ul.appendChild(li);
   });
@@ -576,17 +580,15 @@ function loadMoreModalItems() {
 }
 
 /**
- * Create feed item HTML
+ * Create feed item HTML (inner content only, without <li> wrapper)
  */
 function createFeedItemHTML(item, index) {
   return `
-    <li class="feed-item" data-index="${index}">
-      <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
-        <div class="feed-item-title">${escapeHtml(item.title)}</div>
-        ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
-        <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
-      </a>
-    </li>
+    <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
+      <div class="feed-item-title">${escapeHtml(item.title)}</div>
+      ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+      <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+    </a>
   `;
 }
 

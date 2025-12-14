@@ -12,6 +12,7 @@
   --text-secondary: #374151;
   --text-muted: #6B7280;
   --text-dim: #9CA3AF;
+  --text-tertiary: #D1D5DB;
   
   /* Accent colors (used sparingly) */
   --accent-primary: #3B82F6;
@@ -778,7 +779,8 @@ body {
   transition: transform var(--transition-fast);
 }
 
-.offline-content.expanded + .offline-header .collapse-indicator {
+.offline-content.expanded ~ .offline-header .collapse-indicator,
+.offline-header.expanded .collapse-indicator {
   transform: rotate(180deg);
 }
 
