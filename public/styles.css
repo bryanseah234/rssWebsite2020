@@ -431,3 +431,67 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-dim);
 }
+
+/* Load More Button */
+.load-more-btn {
+  background: var(--accent-primary);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: background var(--transition-fast);
+  width: 100%;
+  font-family: inherit;
+  margin-top: 8px;
+}
+
+.load-more-btn:hover {
+  background: #2563eb;
+}
+
+.load-more-btn:active {
+  transform: translateY(1px);
+}
+
+.feed-card-footer {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+  text-align: center;
+}
+
+.feed-card-footer small {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+/* Offline Section */
+.offline-section {
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 2px solid var(--border-color);
+}
+
+.offline-section .section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  padding: 12px 0;
+  user-select: none;
+}
+
+.offline-section .section-header:hover {
+  opacity: 0.8;
+}
+
+.offline-card {
+  opacity: 0.7;
+  border-color: var(--accent-red);
+}
+
+.offline-card .feed-card-header {
+  background: rgba(239, 68, 68, 0.05);
+}

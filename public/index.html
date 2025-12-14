@@ -64,6 +64,7 @@
     // State
     let loadedFeeds = 0;
     let totalFeeds = 0;
+    const failedFeeds = [];
 
     /**
      * Format date to relative time
@@ -148,23 +149,29 @@
     /**
      * Update feed card with data
      * @param {HTMLElement} card - Feed card element
-     * @param {object} data - Feed data
+     * @param {object} data - Feed data with all items
+     * @param {number} initialLimit - Initial number of items to show
      */
-    function updateFeedCard(card, data) {
+    function updateFeedCard(card, data, initialLimit = 5) {
       card.classList.remove('loading');
       
       const countEl = card.querySelector('.feed-card-count');
       const itemsEl = card.querySelector('.feed-items');
       
-      countEl.textContent = `${data.items.length} items`;
-      
       if (data.items.length === 0) {
         itemsEl.innerHTML = '<li class="error-message">No items available</li>';
+        countEl.textContent = '0 items';
         return;
       }
       
-      itemsEl.innerHTML = data.items.map(item => `
-        <li class="feed-item">
+      // Store all items in dataset
+      card.dataset.allItems = JSON.stringify(data.items);
+      card.dataset.visibleCount = Math.min(initialLimit, data.items.length);
+      
+      // Show initial items
+      const initialItems = data.items.slice(0, initialLimit);
+      itemsEl.innerHTML = initialItems.map((item, index) => `
+        <li class="feed-item" data-index="${index}">
           <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
             <div class="feed-item-title">${escapeHtml(item.title)}</div>
             ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
@@ -172,14 +179,25 @@
           </a>
         </li>
       `).join('');
+      
+      // Add load more button if needed
+      if (data.items.length > initialLimit) {
+        const loadMoreDiv = document.createElement('div');
+        loadMoreDiv.className = 'feed-card-footer';
+        loadMoreDiv.innerHTML = `<button class="load-more-btn" data-feed-name="${escapeHtml(card.dataset.name)}">Load More (${data.items.length - initialLimit} more)</button>`;
+        card.appendChild(loadMoreDiv);
+      }
+      
+      countEl.textContent = `${initialItems.length} of ${data.items.length} items`;
     }
 
     /**
      * Show error state on feed card
      * @param {HTMLElement} card - Feed card element
      * @param {string} error - Error message
+     * @param {object} feed - Feed config
      */
-    function showFeedError(card, error) {
+    function showFeedError(card, error, feed) {
       card.classList.remove('loading');
       card.classList.add('error');
       
@@ -188,6 +206,14 @@
       
       countEl.textContent = 'Error';
       itemsEl.innerHTML = '<li class="error-message">Failed to load feed</li>';
+      
+      // Track failed feed for grouping
+      failedFeeds.push({
+        name: feed.name,
+        url: feed.url,
+        category: card.dataset.category,
+        error: error
+      });
       
       console.error(`[Feed Error] ${card.dataset.name}:`, error);
     }
@@ -199,7 +225,8 @@
      */
     async function fetchFeed(feed, card) {
       try {
-        const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=${feed.limit}`;
+        // Fetch more items for load-more support
+        const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=20`;
         const response = await fetch(url);
         
         if (!response.ok) {
@@ -207,9 +234,9 @@
         }
         
         const data = await response.json();
-        updateFeedCard(card, data);
+        updateFeedCard(card, data, feed.limit);
       } catch (error) {
-        showFeedError(card, error.message);
+        showFeedError(card, error.message, feed);
       } finally {
         loadedFeeds++;
         updateFeedCount();
@@ -290,7 +317,111 @@
       // Fetch all feeds with concurrency limit
       await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
       
-      console.log(`[RSS Dashboard] Loaded ${loadedFeeds} feeds`);
+      // Setup load more handlers
+      document.addEventListener('click', (e) => {
+        if (e.target.classList.contains('load-more-btn')) {
+          handleLoadMore(e.target);
+        }
+      });
+      
+      // Display offline feeds section if any
+      if (failedFeeds.length > 0) {
+        displayOfflineFeeds();
+      }
+      
+      console.log(`[RSS Dashboard] Loaded ${loadedFeeds} feeds, ${failedFeeds.length} failed`);
+    }
+    
+    /**
+     * Handle load more button click
+     * @param {HTMLElement} btn - Load more button
+     */
+    function handleLoadMore(btn) {
+      const card = btn.closest('.feed-card');
+      const allItems = JSON.parse(card.dataset.allItems || '[]');
+      const visibleCount = parseInt(card.dataset.visibleCount || '0');
+      const itemsEl = card.querySelector('.feed-items');
+      
+      // Show next 5 items
+      const newVisibleCount = Math.min(visibleCount + 5, allItems.length);
+      const newItems = allItems.slice(visibleCount, newVisibleCount);
+      
+      // Append new items
+      newItems.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'feed-item';
+        li.dataset.index = visibleCount + index;
+        li.innerHTML = `
+          <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
+            <div class="feed-item-title">${escapeHtml(item.title)}</div>
+            ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+            <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+          </a>
+        `;
+        itemsEl.appendChild(li);
+      });
+      
+      // Update visible count
+      card.dataset.visibleCount = newVisibleCount;
+      
+      // Update button or remove it
+      const remaining = allItems.length - newVisibleCount;
+      if (remaining > 0) {
+        btn.textContent = `Load More (${remaining} more)`;
+      } else {
+        btn.parentElement.innerHTML = '<small>All items loaded</small>';
+      }
+      
+      // Update count
+      const countEl = card.querySelector('.feed-card-count');
+      countEl.textContent = `${newVisibleCount} of ${allItems.length} items`;
+    }
+    
+    /**
+     * Display offline feeds section
+     */
+    function displayOfflineFeeds() {
+      const mainContainer = document.querySelector('.main-container');
+      
+      const offlineSection = document.createElement('section');
+      offlineSection.className = 'offline-section';
+      offlineSection.innerHTML = `
+        <div class="section-header" style="cursor: pointer;" onclick="toggleOfflineSection()">
+          <h2>⚠️ Offline Feeds (${failedFeeds.length})</h2>
+          <span class="collapse-indicator" style="font-size: 12px; color: var(--text-tertiary);">▼</span>
+        </div>
+        <div class="feed-grid" id="offline-feeds-grid" style="display: none;">
+          ${failedFeeds.map(feed => `
+            <div class="feed-card error offline-card">
+              <div class="feed-card-header">
+                <span class="feed-card-title">${escapeHtml(feed.name)}</span>
+                <span class="feed-card-count">Error</span>
+              </div>
+              <ul class="feed-items">
+                <li class="error-message">Failed to load feed</li>
+                <li class="error-message" style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(feed.error)}</li>
+              </ul>
+            </div>
+          `).join('')}
+        </div>
+      `;
+      
+      mainContainer.appendChild(offlineSection);
+    }
+    
+    /**
+     * Toggle offline feeds section
+     */
+    function toggleOfflineSection() {
+      const grid = document.getElementById('offline-feeds-grid');
+      const indicator = document.querySelector('.offline-section .collapse-indicator');
+      if (grid.style.display === 'none') {
+        grid.style.display = 'grid';
+        indicator.textContent = '▲';
+      } else {
+        grid.style.display = 'none';
+        indicator.textContent = '▼';
+      }
     }
 
     // Start the app
