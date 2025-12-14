@@ -19,6 +19,9 @@ REDDIT_MAX_WORKERS = 6  # Max concurrent Reddit fetches
 YOUTUBE_MAX_WORKERS = 6  # Max concurrent YouTube fetches
 TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
 
+# Feed fetching configuration
+MAX_FETCH_ITEMS = 50  # Maximum items to fetch per feed for load-more support
+
 
 def log(message):
     """Helper function for logging"""
@@ -85,12 +88,21 @@ def load_feeds_config():
         return {"sections": [], "subreddits": []}
 
 
-def fetch_rss_feed(url, limit=5):
-    """Fetch and parse RSS feed"""
+def fetch_rss_feed(url, limit=5, enable_load_more=True):
+    """Fetch and parse RSS feed
+
+    Args:
+        url: Feed URL
+        limit: Initial display limit
+        enable_load_more: If True, fetch up to MAX_FETCH_ITEMS for load-more; if False, only fetch limit
+
+    Returns:
+        dict with 'items' (all items), 'error' flag, and 'total_count'
+    """
     # Security: Validate URL before fetching
     if not is_safe_url(url):
         log(f"Skipping unsafe URL: {url}")
-        return []
+        return {'items': [], 'error': True, 'error_msg': 'Unsafe URL', 'total_count': 0}
 
     try:
         log(f"Fetching RSS feed: {url}")
@@ -110,8 +122,10 @@ def fetch_rss_feed(url, limit=5):
         feed = feedparser.parse(response.content)
         log(f"Parsed {len(feed.entries)} entries from {url}")
 
+        # Fetch more items if requested (for load-more feature)
+        max_items = MAX_FETCH_ITEMS if enable_load_more else limit
         items = []
-        for entry in feed.entries[:limit]:
+        for entry in feed.entries[:max_items]:
             published = entry.get('published', entry.get('updated', ''))
             try:
                 if published:
@@ -130,11 +144,12 @@ def fetch_rss_feed(url, limit=5):
             })
 
         log(f"Returning {len(items)} items from {url}")
-        return items
+        return {'items': items, 'error': False, 'error_msg': '', 'total_count': len(items)}
     except Exception as e:
-        log(f"ERROR fetching {url}: {e}")
+        error_msg = str(e)
+        log(f"ERROR fetching {url}: {error_msg}")
         log(traceback.format_exc())
-        return []
+        return {'items': [], 'error': True, 'error_msg': error_msg, 'total_count': 0}
 
 
 def get_time_ago(dt):
@@ -440,8 +455,12 @@ def root():
         for section_idx, section in enumerate(sections):
             feeds = section.get('feeds', [])
             for feed_idx, feed in enumerate(feeds):
-                # Initialize items to empty list to prevent template errors
+                # Initialize feed data structure
                 feed['items'] = []
+                feed['all_items'] = []
+                feed['error'] = False
+                feed['error_msg'] = ''
+                feed['initial_limit'] = feed.get('limit', 5)
                 all_feeds.append({
                     'section_idx': section_idx,
                     'feed_idx': feed_idx,
@@ -456,7 +475,8 @@ def root():
                 executor.submit(
                     fetch_rss_feed,
                     f['feed']['url'],
-                    f['feed'].get('limit', 5)
+                    f['feed'].get('limit', 5),
+                    True  # fetch_all=True for load-more support
                 ): f for f in all_feeds
             }
 
@@ -464,23 +484,36 @@ def root():
                 for future in as_completed(future_to_feed, timeout=PARALLEL_TIMEOUT):
                     feed_info = future_to_feed[future]
                     try:
-                        items = future.result()
-                        sections[feed_info['section_idx']
-                                 ]['feeds'][feed_info['feed_idx']]['items'] = items
+                        result = future.result()
+                        feed_data = sections[feed_info['section_idx']
+                                             ]['feeds'][feed_info['feed_idx']]
+                        feed_data['all_items'] = result['items']
+                        feed_data['items'] = result['items'][:feed_data['initial_limit']]
+                        feed_data['error'] = result['error']
+                        feed_data['error_msg'] = result['error_msg']
+                        feed_data['total_count'] = result['total_count']
                     except Exception as e:
                         log(f"Error fetching {feed_info['feed']['url']}: {e}")
-                        sections[feed_info['section_idx']
-                                 ]['feeds'][feed_info['feed_idx']]['items'] = []
+                        feed_data = sections[feed_info['section_idx']
+                                             ]['feeds'][feed_info['feed_idx']]
+                        feed_data['items'] = []
+                        feed_data['all_items'] = []
+                        feed_data['error'] = True
+                        feed_data['error_msg'] = str(e)
             except TimeoutError:
                 log(
                     f"RSS fetching timed out after {PARALLEL_TIMEOUT} seconds. Some feeds may not be loaded.")
-                # Cancel pending futures and ensure items is set for timed-out feeds
+                # Cancel pending futures and ensure data is set for timed-out feeds
                 for future, feed_info in future_to_feed.items():
                     future.cancel()
-                    # Ensure items is set even for timed-out feeds
-                    if 'items' not in sections[feed_info['section_idx']]['feeds'][feed_info['feed_idx']]:
-                        sections[feed_info['section_idx']
-                                 ]['feeds'][feed_info['feed_idx']]['items'] = []
+                    # Ensure data is set even for timed-out feeds
+                    feed_data = sections[feed_info['section_idx']
+                                         ]['feeds'][feed_info['feed_idx']]
+                    if 'items' not in feed_data:
+                        feed_data['items'] = []
+                        feed_data['all_items'] = []
+                        feed_data['error'] = True
+                        feed_data['error_msg'] = 'Timeout'
 
         log(f"Processed {len(all_feeds)} feeds total")
 
