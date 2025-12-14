@@ -59,6 +59,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('youtube', FEEDS.youtube.length);
   }
   
   // Blogs section
@@ -69,6 +70,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('blogs', FEEDS.blogs.length);
   }
   
   // Security section
@@ -79,6 +81,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('security', FEEDS.security.length);
   }
   
   // Subreddits section
@@ -89,6 +92,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('subreddits', FEEDS.subreddits.length);
   }
   
   // Twitch section
@@ -99,6 +103,7 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
+    updateTabCount('twitch', FEEDS.twitch.length);
   }
   
   totalFeeds = feedConfigs.length;
@@ -613,6 +618,17 @@ function updateFeedCount() {
     countEl.textContent = `Loading ${loadedFeeds}/${totalFeeds} feeds...`;
   } else {
     countEl.textContent = `${totalFeeds} feeds loaded`;
+  }
+}
+
+/**
+ * Update tab count badge
+ */
+function updateTabCount(section, count) {
+  const countEl = document.getElementById(`${section}-tab-count`);
+  if (countEl) {
+    countEl.textContent = count;
+    countEl.setAttribute('aria-label', `${count} feeds`);
   }
 }
 
