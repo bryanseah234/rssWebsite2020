@@ -507,15 +507,15 @@ function openModal(feedName, feedData) {
   }
   
   // Reset modal state
-  modalLoadOffset = MODAL_LOAD_INCREMENT;
+  modalLoadOffset = 20; // Start at 20 (10 initial + 10 for first modal batch)
   modalItems = feedData.items;
   modalTotalItems = feedData.items.length;
   modalIsLoading = false;
   
-  // Load initial items (skip first 5 that are already shown in card)
-  const initialItems = modalItems.slice(5, modalLoadOffset);
+  // Load initial items (skip first 10 that are already shown in card)
+  const initialItems = modalItems.slice(10, modalLoadOffset);
   body.innerHTML = '<ul class="feed-items">' + 
-    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 5}">${createFeedItemHTML(item, index + 5)}</li>`).join('') +
+    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 10}">${createFeedItemHTML(item, index + 10)}</li>`).join('') +
     '</ul>';
   
   // Show modal
