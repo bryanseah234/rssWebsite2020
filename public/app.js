@@ -109,6 +109,11 @@ async function setupSections() {
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
   
+  // Remove failed/empty feed cards from main grid
+  document.querySelectorAll('.feed-card.error').forEach(card => {
+    card.remove();
+  });
+  
   // Display offline feeds section if any
   if (failedFeeds.length > 0) {
     displayOfflineFeeds();
@@ -189,15 +194,27 @@ async function fetchFeedsWithConcurrency(feedConfigs, limit) {
 /**
  * Update feed card with data
  */
-function updateFeedCard(card, data, initialLimit = 5) {
+function updateFeedCard(card, data, initialLimit = 3) {
   card.classList.remove('loading');
   
   const countEl = card.querySelector('.feed-card-count');
   const itemsEl = card.querySelector('.feed-items');
   
   if (data.items.length === 0) {
+    // Treat as offline feed
+    card.classList.add('error');
     itemsEl.innerHTML = '<li class="error-message">No items available</li>';
     countEl.textContent = '0 items';
+    
+    // Track as failed feed for offline section
+    const feedName = card.dataset.name || 'Unknown Feed';
+    failedFeeds.push({
+      name: feedName,
+      url: '',
+      category: card.dataset.category,
+      error: 'No items available'
+    });
+    
     return;
   }
   
@@ -556,15 +573,15 @@ function openModal(feedName, feedData) {
   }
   
   // Reset modal state
-  modalLoadOffset = 20; // Start at 20 (10 initial + 10 for first modal batch)
+  modalLoadOffset = 15; // Start at 15 (3 initial + 12 more to show 15 total in modal)
   modalItems = feedData.items;
   modalTotalItems = feedData.items.length;
   modalIsLoading = false;
   
-  // Load initial items (skip first 10 that are already shown in card)
-  const initialItems = modalItems.slice(10, modalLoadOffset);
+  // Load initial items (skip first 3 that are already shown in card, show up to 15 total)
+  const initialItems = modalItems.slice(3, modalLoadOffset);
   body.innerHTML = '<ul class="feed-items">' + 
-    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 10}">${createFeedItemHTML(item, index + 10)}</li>`).join('') +
+    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 3}">${createFeedItemHTML(item, index + 3)}</li>`).join('') +
     '</ul>';
   
   // Show modal
