@@ -40,6 +40,53 @@ function parseDate(dateStr) {
 }
 
 /**
+ * Extract thumbnail URL from RSS item
+ * @param {object} item - RSS item object
+ * @returns {string} - Thumbnail URL or empty string
+ */
+function extractThumbnail(item) {
+  // Try media:thumbnail (YouTube, Reddit)
+  if (item['media:thumbnail'] && item['media:thumbnail']['@_url']) {
+    return item['media:thumbnail']['@_url'];
+  }
+  
+  // Try array of media:thumbnail
+  if (Array.isArray(item['media:thumbnail']) && item['media:thumbnail'].length > 0) {
+    return item['media:thumbnail'][0]['@_url'] || '';
+  }
+  
+  // Try media:content (Reddit, Twitch)
+  if (item['media:content']) {
+    const mediaContent = Array.isArray(item['media:content']) 
+      ? item['media:content'][0] 
+      : item['media:content'];
+    
+    if (mediaContent && (
+      mediaContent['@_medium'] === 'image' || 
+      (mediaContent['@_type'] && mediaContent['@_type'].includes('image'))
+    )) {
+      return mediaContent['@_url'] || '';
+    }
+  }
+  
+  // Try enclosure (podcasts and some feeds)
+  if (item.enclosure && item.enclosure['@_type'] && item.enclosure['@_type'].startsWith('image/')) {
+    return item.enclosure['@_url'] || item.enclosure['@_href'] || '';
+  }
+  
+  // Try to construct YouTube thumbnail from video ID in link
+  const link = item.link || item.guid || '';
+  if (link.includes('youtube.com') || link.includes('youtu.be')) {
+    const videoIdMatch = link.match(/(?:v=|\/videos\/|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (videoIdMatch) {
+      return `https://img.youtube.com/vi/${videoIdMatch[1]}/mqdefault.jpg`;
+    }
+  }
+  
+  return '';
+}
+
+/**
  * Extract items from RSS 2.0 feed
  * @param {object} feed - Parsed feed object
  * @param {number} limit - Maximum number of items
@@ -61,7 +108,8 @@ function parseRss2(feed, limit) {
     title: stripHtml(item.title || 'No title'),
     link: item.link || '',
     pubDate: parseDate(item.pubDate),
-    text: stripHtml(item.description || item['content:encoded'] || '')
+    text: stripHtml(item.description || item['content:encoded'] || ''),
+    thumbnail: extractThumbnail(item)
   }));
   
   return { title, items: parsedItems };
@@ -116,7 +164,8 @@ function parseAtom(feed, limit) {
       title: stripHtml(typeof entry.title === 'string' ? entry.title : (entry.title?.['#text'] || 'No title')),
       link: link,
       pubDate: parseDate(entry.updated || entry.published),
-      text: stripHtml(text)
+      text: stripHtml(text),
+      thumbnail: extractThumbnail(entry)
     };
   });
   
@@ -188,7 +237,8 @@ async function fetchFeed(feedUrl, limit) {
           title: stripHtml(item.title || 'No title'),
           link: item.link || '',
           pubDate: parseDate(item['dc:date'] || item.pubDate),
-          text: stripHtml(item.description || '')
+          text: stripHtml(item.description || ''),
+          thumbnail: extractThumbnail(item)
         }))
       };
     } else {
