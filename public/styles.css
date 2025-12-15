@@ -80,6 +80,23 @@
   --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
+/* Dark theme recency backgrounds - more visible */
+[data-theme="dark"] .feed-card.recency-today {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+[data-theme="dark"] .feed-card.recency-week {
+  background: rgba(96, 165, 250, 0.08);
+}
+
+[data-theme="dark"] .feed-card.recency-month {
+  background: rgba(147, 197, 253, 0.06);
+}
+
+[data-theme="dark"] .feed-card.recency-old {
+  background: rgba(156, 163, 175, 0.04);
+}
+
 /* Reset and base styles */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -283,18 +300,22 @@ body {
 
 .feed-card.recency-today {
   border-left-color: var(--recency-today);
+  background: rgba(59, 130, 246, 0.05);
 }
 
 .feed-card.recency-week {
   border-left-color: var(--recency-week);
+  background: rgba(96, 165, 250, 0.04);
 }
 
 .feed-card.recency-month {
   border-left-color: var(--recency-month);
+  background: rgba(147, 197, 253, 0.03);
 }
 
 .feed-card.recency-old {
   border-left-color: var(--recency-old);
+  background: rgba(156, 163, 175, 0.02);
 }
 
 .feed-card:hover {
@@ -402,6 +423,25 @@ body {
 .feed-item-meta {
   font-size: var(--font-size-sm);
   color: var(--text-muted);
+}
+
+/* Article-level recency colors */
+.feed-item.recency-today .feed-item-title {
+  color: var(--recency-today);
+  font-weight: 600;
+}
+
+.feed-item.recency-week .feed-item-title {
+  color: var(--recency-week);
+}
+
+.feed-item.recency-month .feed-item-title {
+  color: var(--recency-month);
+}
+
+.feed-item.recency-old .feed-item-title {
+  color: var(--recency-old);
+  opacity: 0.8;
 }
 
 /* Loading State */

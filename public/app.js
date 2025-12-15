@@ -237,8 +237,10 @@ function updateFeedCard(card, data, initialLimit = 3) {
   
   // Show initial items
   const initialItems = data.items.slice(0, initialLimit);
-  itemsEl.innerHTML = initialItems.map((item, index) => `
-    <li class="feed-item" data-index="${index}">
+  itemsEl.innerHTML = initialItems.map((item, index) => {
+    const articleRecencyClass = getRecencyClass(item.pubDate);
+    return `
+    <li class="feed-item ${articleRecencyClass}" data-index="${index}">
       <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
         ${item.thumbnail ? `<img src="${escapeHtml(item.thumbnail)}" alt="" class="feed-item-thumbnail" loading="lazy">` : ''}
         <div class="feed-item-content">
@@ -248,7 +250,8 @@ function updateFeedCard(card, data, initialLimit = 3) {
         </div>
       </a>
     </li>
-  `).join('');
+  `;
+  }).join('');
   
   // Add load more button if needed
   if (data.items.length > initialLimit) {
@@ -594,7 +597,10 @@ function openModal(feedName, feedData) {
   // Load initial items (skip first 3 that are already shown in card, show up to 15 total)
   const initialItems = modalItems.slice(3, modalLoadOffset);
   body.innerHTML = '<ul class="feed-items">' + 
-    initialItems.map((item, index) => `<li class="feed-item" data-index="${index + 3}">${createFeedItemHTML(item, index + 3)}</li>`).join('') +
+    initialItems.map((item, index) => {
+      const recencyClass = getRecencyClass(item.pubDate);
+      return `<li class="feed-item ${recencyClass}" data-index="${index + 3}">${createFeedItemHTML(item, index + 3)}</li>`;
+    }).join('') +
     '</ul>';
   
   // Show modal
@@ -651,7 +657,8 @@ function loadMoreModalItems() {
   
   newItems.forEach((item, index) => {
     const li = document.createElement('li');
-    li.className = 'feed-item';
+    const recencyClass = getRecencyClass(item.pubDate);
+    li.className = `feed-item ${recencyClass}`;
     li.dataset.index = modalLoadOffset + index;
     li.innerHTML = createFeedItemHTML(item, modalLoadOffset + index);
     ul.appendChild(li);
