@@ -18,6 +18,15 @@ const failedFeeds = [];
 const feedDataCache = new Map();
 const sectionScrollPositions = {};
 
+// View state per section (timeline or cards)
+const sectionViewState = {
+  youtube: 'timeline',
+  blogs: 'timeline',
+  security: 'timeline',
+  subreddits: 'timeline',
+  twitch: 'timeline'
+};
+
 // Touch handling state
 let touchStartX = 0;
 let touchStartY = 0;
@@ -43,7 +52,7 @@ async function init() {
   setupKeyboardNavigation();
   setupModal();
   
-  // Load initial section (YouTube)
+  // Load initial section (YouTube) in timeline view
   switchSection('youtube');
   
   console.log(`[RSS Dashboard] Initialized with ${totalFeeds} feeds`);
@@ -134,8 +143,10 @@ function createFeedCard(name, category) {
   card.dataset.category = category;
   card.innerHTML = `
     <div class="feed-card-header">
-      <span class="feed-card-title">${escapeHtml(name)}</span>
-      <span class="feed-card-count">...</span>
+      <div class="feed-card-header-left">
+        <span class="feed-card-title">${escapeHtml(name)}</span>
+        <span class="feed-card-count">...</span>
+      </div>
     </div>
     <ul class="feed-items">
       <li class="loading-skeleton">
@@ -201,6 +212,7 @@ async function fetchFeedsWithConcurrency(feedConfigs, limit) {
 function updateFeedCard(card, data, initialLimit = 3) {
   card.classList.remove('loading');
   
+  const headerEl = card.querySelector('.feed-card-header');
   const countEl = card.querySelector('.feed-card-count');
   const itemsEl = card.querySelector('.feed-items');
   
@@ -253,21 +265,27 @@ function updateFeedCard(card, data, initialLimit = 3) {
   `;
   }).join('');
   
-  // Add load more button if needed
+  // Add load more button to header if needed
   if (data.items.length > initialLimit) {
-    const loadMoreDiv = document.createElement('div');
-    loadMoreDiv.className = 'feed-card-footer';
-    loadMoreDiv.innerHTML = `<button class="load-more-btn" data-feed-name="${escapeHtml(card.dataset.name)}">Load More (${data.items.length - initialLimit} more)</button>`;
-    card.appendChild(loadMoreDiv);
+    // Remove existing load more button if any
+    const existingBtn = headerEl.querySelector('.load-more-btn');
+    if (existingBtn) existingBtn.remove();
+    
+    const loadMoreBtn = document.createElement('button');
+    loadMoreBtn.className = 'load-more-btn';
+    loadMoreBtn.textContent = `Load More (${data.items.length - initialLimit})`;
+    loadMoreBtn.dataset.feedName = card.dataset.name;
     
     // Add click handler
-    loadMoreDiv.querySelector('.load-more-btn').addEventListener('click', (e) => {
+    loadMoreBtn.addEventListener('click', (e) => {
       e.preventDefault();
       openModal(card.dataset.name, data);
     });
+    
+    headerEl.appendChild(loadMoreBtn);
   }
   
-  countEl.textContent = `${initialItems.length} of ${data.items.length} items`;
+  countEl.textContent = `${initialItems.length} of ${data.items.length}`;
 }
 
 /**
@@ -327,7 +345,7 @@ function toggleOfflineSection() {
 window.toggleOfflineSection = toggleOfflineSection;
 
 /**
- * Setup tab navigation
+ * Setup tab navigation with view toggle
  */
 function setupTabNavigation() {
   const tabs = document.querySelectorAll('.header-tab');
@@ -335,9 +353,25 @@ function setupTabNavigation() {
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const section = tab.dataset.section;
-      switchSection(section);
+      handleTabClick(section);
     });
   });
+}
+
+/**
+ * Handle tab click - switch section or toggle view
+ */
+function handleTabClick(section) {
+  if (section === currentSection) {
+    // Same tab clicked - toggle view
+    sectionViewState[section] = 
+      sectionViewState[section] === 'timeline' ? 'cards' : 'timeline';
+    renderSectionView(section);
+    updateTabIndicator(section);
+  } else {
+    // Different tab clicked - switch section
+    switchSection(section);
+  }
 }
 
 /**
@@ -523,6 +557,10 @@ function switchSection(sectionName) {
     newTab.setAttribute('aria-selected', 'true');
     currentSection = sectionName;
     
+    // Render section in its saved view mode
+    renderSectionView(sectionName);
+    updateTabIndicator(sectionName);
+    
     // Restore scroll position
     setTimeout(() => {
       const savedPosition = sectionScrollPositions[sectionName] || 0;
@@ -532,6 +570,165 @@ function switchSection(sectionName) {
   
   // Filter offline feeds by current section
   filterOfflineFeeds(sectionName);
+}
+
+/**
+ * Update tab indicator to show current view mode
+ */
+function updateTabIndicator(section) {
+  const tab = document.querySelector(`.header-tab[data-section="${section}"]`);
+  if (!tab) return;
+  
+  const viewMode = sectionViewState[section];
+  if (viewMode === 'timeline') {
+    tab.classList.add('timeline-view');
+  } else {
+    tab.classList.remove('timeline-view');
+  }
+}
+
+/**
+ * Render section in current view mode (timeline or cards)
+ */
+function renderSectionView(section) {
+  const grid = document.getElementById(`${section}-grid`);
+  if (!grid) return;
+  
+  const viewMode = sectionViewState[section];
+  
+  if (viewMode === 'timeline') {
+    renderTimelineView(section, grid);
+  } else {
+    renderCardView(section, grid);
+  }
+}
+
+/**
+ * Render timeline view - chronological list of all articles from last 30 days
+ */
+function renderTimelineView(section, grid) {
+  // Get all feeds for this section
+  const feeds = getSectionFeeds(section);
+  if (!feeds || feeds.length === 0) {
+    grid.innerHTML = '<div class="timeline-empty"><div class="timeline-empty-icon">📭</div><h3>No feeds available</h3><p>Check back later for updates</p></div>';
+    return;
+  }
+  
+  // Get timeline articles (last 30 days, sorted chronologically)
+  const articles = getTimelineArticles(feeds);
+  
+  if (articles.length === 0) {
+    grid.innerHTML = '<div class="timeline-empty"><div class="timeline-empty-icon">📭</div><h3>No recent articles</h3><p>No articles from the last 30 days</p></div>';
+    return;
+  }
+  
+  // Render timeline list
+  const timelineHTML = `
+    <div class="timeline-container">
+      <ul class="timeline-list">
+        ${articles.map(article => {
+          const recencyClass = getRecencyClass(article.pubDate);
+          return `
+            <li class="timeline-item ${recencyClass}">
+              <a href="${escapeHtml(article.link)}" class="timeline-item-link" target="_blank" rel="noopener noreferrer">
+                ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="" class="timeline-item-thumbnail" loading="lazy">` : ''}
+                <div class="timeline-item-content">
+                  <div class="timeline-item-title">${escapeHtml(article.title)}</div>
+                  <div class="timeline-item-source">${escapeHtml(article.sourceName)}</div>
+                  ${article.text ? `<div class="timeline-item-text">${escapeHtml(truncateText(article.text, 120))}</div>` : ''}
+                  <div class="timeline-item-meta">${formatRelativeTime(article.pubDate)}</div>
+                </div>
+              </a>
+            </li>
+          `;
+        }).join('')}
+      </ul>
+    </div>
+  `;
+  
+  grid.innerHTML = timelineHTML;
+}
+
+/**
+ * Render card view - feeds grouped by source
+ */
+function renderCardView(section, grid) {
+  // Restore original card view by re-showing all feed cards
+  const cards = Array.from(grid.querySelectorAll('.feed-card'));
+  
+  if (cards.length === 0) {
+    // No cards exist, need to recreate them
+    grid.innerHTML = '';
+    const feeds = getSectionFeeds(section);
+    if (!feeds) return;
+    
+    feeds.forEach(feed => {
+      const card = createFeedCard(feed.name, section);
+      grid.appendChild(card);
+      
+      // Fetch and populate card data
+      const cachedData = feedDataCache.get(feed.name);
+      if (cachedData) {
+        updateFeedCard(card, cachedData, feed.limit);
+      }
+    });
+    
+    // Sort cards by recency
+    sortFeedsByRecencyInGrid(grid);
+  } else {
+    // Cards already exist, just make sure they're visible
+    cards.forEach(card => {
+      card.style.display = '';
+    });
+  }
+}
+
+/**
+ * Get feeds for a section
+ */
+function getSectionFeeds(section) {
+  if (!window.FEEDS) return null;
+  
+  const sectionMap = {
+    'youtube': window.FEEDS.youtube,
+    'blogs': window.FEEDS.blogs,
+    'security': window.FEEDS.security,
+    'subreddits': window.FEEDS.subreddits,
+    'twitch': window.FEEDS.twitch
+  };
+  
+  return sectionMap[section];
+}
+
+/**
+ * Get timeline articles - merge all feeds, filter last 30 days, sort chronologically
+ */
+function getTimelineArticles(feeds) {
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+  
+  const allArticles = [];
+  
+  feeds.forEach(feed => {
+    const cachedData = feedDataCache.get(feed.name);
+    if (cachedData && cachedData.items) {
+      cachedData.items.forEach(item => {
+        allArticles.push({
+          ...item,
+          sourceName: feed.name,
+          sourceUrl: feed.url
+        });
+      });
+    }
+  });
+  
+  // Filter to last 30 days and sort by date (newest first)
+  return allArticles
+    .filter(article => {
+      const articleDate = new Date(article.pubDate);
+      return !isNaN(articleDate.getTime()) && articleDate >= oneMonthAgo;
+    })
+    .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
 }
 
 /**
@@ -811,23 +1008,29 @@ function sortFeedsByRecency() {
   sections.forEach(section => {
     const grid = document.getElementById(`${section}-grid`);
     if (!grid) return;
+    sortFeedsByRecencyInGrid(grid);
+  });
+}
+
+/**
+ * Sort feed cards by recency in a specific grid
+ */
+function sortFeedsByRecencyInGrid(grid) {
+  // Get all feed cards in this grid (excluding error cards)
+  const cards = Array.from(grid.querySelectorAll('.feed-card:not(.error)'));
+  
+  // Sort by latest date (most recent first)
+  cards.sort((a, b) => {
+    const dateA = a.dataset.latestDate ? new Date(a.dataset.latestDate).getTime() : 0;
+    const dateB = b.dataset.latestDate ? new Date(b.dataset.latestDate).getTime() : 0;
     
-    // Get all feed cards in this grid (excluding error cards)
-    const cards = Array.from(grid.querySelectorAll('.feed-card:not(.error)'));
-    
-    // Sort by latest date (most recent first)
-    cards.sort((a, b) => {
-      const dateA = a.dataset.latestDate ? new Date(a.dataset.latestDate).getTime() : 0;
-      const dateB = b.dataset.latestDate ? new Date(b.dataset.latestDate).getTime() : 0;
-      
-      // Handle NaN values (invalid dates) by treating them as 0
-      return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
-    });
-    
-    // Re-append cards in sorted order
-    cards.forEach(card => {
-      grid.appendChild(card);
-    });
+    // Handle NaN values (invalid dates) by treating them as 0
+    return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
+  });
+  
+  // Re-append cards in sorted order
+  cards.forEach(card => {
+    grid.appendChild(card);
   });
 }
 
