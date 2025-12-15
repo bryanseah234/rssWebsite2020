@@ -90,23 +90,53 @@ body {
 
 .header-content {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
     max-width: 1600px;
     margin: 0 auto;
-    position: relative;
+    gap: 20px;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.header-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--accent-blue);
+    flex-shrink: 0;
 }
 
 .header-title {
-    text-align: center;
-}
-
-.page-header h1 {
     font-size: var(--font-size-xl);
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
     letter-spacing: -0.3px;
+    white-space: nowrap;
 }
 
 /* Theme Toggle */
@@ -117,8 +147,6 @@ body {
     padding: 4px;
     border-radius: 8px;
     border: 1px solid var(--border);
-    position: absolute;
-    right: 0;
 }
 
 .theme-btn {
@@ -144,13 +172,6 @@ body {
     background: var(--surface);
     color: var(--text-primary);
     box-shadow: var(--shadow-soft);
-}
-
-.debug-info {
-    color: var(--text-tertiary);
-    font-size: var(--font-size-base);
-    text-align: center;
-    margin-top: 8px;
 }
 
 /* Error Banner */
@@ -301,7 +322,7 @@ body {
 
 .feed-item a {
     display: flex;
-    flex-direction: column;
+    gap: 12px;
     padding: 12px var(--padding-card);
     text-decoration: none;
     color: var(--text-primary);
@@ -311,6 +332,22 @@ body {
 
 .feed-item a:hover {
     background: var(--surface-hover);
+}
+
+.feed-item-thumbnail {
+    width: 120px;
+    height: 68px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+    background: var(--background);
+}
+
+.feed-item-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
 }
 
 .feed-title {

@@ -15,46 +15,48 @@
     <body>
         <div class="page-header">
             <div class="header-content">
-                <h1 class="header-title">Prawn Feeds</h1>
-                <div class="theme-toggle">
-                    <button class="theme-btn" data-theme="light" title="Light theme">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="5"></circle>
-                            <line x1="12" y1="1" x2="12" y2="3"></line>
-                            <line x1="12" y1="21" x2="12" y2="23"></line>
-                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                            <line x1="1" y1="12" x2="3" y2="12"></line>
-                            <line x1="21" y1="12" x2="23" y2="12"></line>
-                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                <div class="header-left">
+                    <div class="logo">
+                        <svg class="logo-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 11a9 9 0 0 1 9 9"></path>
+                            <path d="M4 4a16 16 0 0 1 16 16"></path>
+                            <circle cx="5" cy="19" r="1"></circle>
                         </svg>
-                    </button>
-                    <button class="theme-btn" data-theme="dark" title="Dark theme">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                        </svg>
-                    </button>
-                    <button class="theme-btn" data-theme="system" title="System theme">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                            <line x1="8" y1="21" x2="16" y2="21"></line>
-                            <line x1="12" y1="17" x2="12" y2="21"></line>
-                        </svg>
-                    </button>
+                        <h1 class="header-title">Prawn Feeds</h1>
+                    </div>
                 </div>
-            </div>
-            <div class="debug-info">
-                {% set blogs_count = namespace(count=0) %}
-                {% set security_count = namespace(count=0) %}
-                {% for section in config.sections %}
-                    {% if section.title == "Blogs" or "blog" in (section.title|lower) %}
-                        {% set blogs_count.count = blogs_count.count + section.feeds|length %}
-                    {% elif "security" in (section.title|lower) or "tech" in (section.title|lower) %}
-                        {% set security_count.count = security_count.count + section.feeds|length %}
-                    {% endif %}
-                {% endfor %}
-                <small>Blogs: {{ blogs_count.count }} | Security: {{ security_count.count }} | Subreddits: {{ config.subreddits|length }} | YouTube: {{ youtube_data|length }} | Twitch: {{ twitch_data|length }}</small>
+                <div class="header-center">
+                    <!-- Tabs will be added with JavaScript since this is server-rendered -->
+                </div>
+                <div class="header-right">
+                    <div class="theme-toggle">
+                        <button class="theme-btn" data-theme="light" title="Light theme">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                        </button>
+                        <button class="theme-btn" data-theme="dark" title="Dark theme">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                        </button>
+                        <button class="theme-btn" data-theme="system" title="System theme">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                                <line x1="8" y1="21" x2="16" y2="21"></line>
+                                <line x1="12" y1="17" x2="12" y2="21"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -80,10 +82,15 @@
                             {% for item in feed['all_items'] %}
                                 <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
                                     <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                        <div class="feed-title">{{ item.title }}</div>
-                                        {% if item.published %}
-                                            <div class="feed-time">{{ item.published }}</div>
+                                        {% if item.thumbnail %}
+                                            <img src="{{ item.thumbnail }}" alt="" class="feed-item-thumbnail" loading="lazy">
                                         {% endif %}
+                                        <div class="feed-item-content">
+                                            <div class="feed-title">{{ item.title }}</div>
+                                            {% if item.published %}
+                                                <div class="feed-time">{{ item.published }}</div>
+                                            {% endif %}
+                                        </div>
                                     </a>
                                 </li>
                             {% endfor %}
@@ -223,7 +230,12 @@
                                         {% for post in reddit.posts %}
                                             <li class="feed-item">
                                                 <a href="{{ post.link }}" target="_blank" rel="noopener">
-                                                    <div class="feed-title">{{ post.title }}</div>
+                                                    {% if post.thumbnail %}
+                                                        <img src="{{ post.thumbnail }}" alt="" class="feed-item-thumbnail" loading="lazy">
+                                                    {% endif %}
+                                                    <div class="feed-item-content">
+                                                        <div class="feed-title">{{ post.title }}</div>
+                                                    </div>
                                                 </a>
                                             </li>
                                         {% endfor %}
