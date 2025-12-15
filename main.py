@@ -518,7 +518,7 @@ def root():
                 feed['all_items'] = []
                 feed['error'] = False
                 feed['error_msg'] = ''
-                feed['initial_limit'] = feed.get('limit', 5)
+                feed['initial_limit'] = feed.get('limit', 3)
                 all_feeds.append({
                     'section_idx': section_idx,
                     'feed_idx': feed_idx,
@@ -533,7 +533,7 @@ def root():
                 executor.submit(
                     fetch_rss_feed,
                     f['feed']['url'],
-                    f['feed'].get('limit', 5),
+                    f['feed'].get('limit', 3),
                     True  # fetch_all=True for load-more support
                 ): f for f in all_feeds
             }
@@ -768,3 +768,8 @@ def debug():
 
 # For Vercel
 app = app
+
+if __name__ == '__main__':
+    # Only run in debug mode if explicitly set in environment
+    debug_mode = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
+    app.run(host='0.0.0.0', port=5000, debug=debug_mode)
