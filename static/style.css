@@ -556,8 +556,18 @@ body {
         gap: 8px;
     }
     
+    .header-left, .header-center, .header-right {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .logo {
+        justify-content: center;
+    }
+    
     .theme-toggle {
         position: static;
+        justify-content: center;
     }
 }
 
