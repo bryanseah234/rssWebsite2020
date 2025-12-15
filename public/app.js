@@ -143,7 +143,7 @@ function createFeedCard(name, category) {
   card.dataset.category = category;
   card.innerHTML = `
     <div class="feed-card-header">
-      <div style="display: flex; align-items: center; gap: 8px;">
+      <div class="feed-card-header-left">
         <span class="feed-card-title">${escapeHtml(name)}</span>
         <span class="feed-card-count">...</span>
       </div>

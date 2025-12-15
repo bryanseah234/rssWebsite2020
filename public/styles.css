@@ -325,6 +325,12 @@ body {
   gap: 12px;
 }
 
+.feed-card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .feed-card-title {
   font-size: var(--font-size-md);
   font-weight: 600;
@@ -637,17 +643,7 @@ body {
   transform: scale(0.98);
 }
 
-.feed-card-footer {
-  padding: 12px;
-  border-top: 1px solid var(--border-color);
-  text-align: center;
-  display: none; /* Hide footer since button is now in header */
-}
-
-.feed-card-footer small {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-}
+/* Footer removed - Load More button now in header */
 
 /* Offline Section */
 .offline-section {
