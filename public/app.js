@@ -990,7 +990,7 @@ function getRecencyClass(dateStr) {
     const diffMs = now - date;
     const diffDays = Math.floor(diffMs / MS_PER_DAY);
     
-    if (diffDays < 1) return 'recency-today';
+    if (diffDays === 0) return 'recency-today';
     if (diffDays <= 7) return 'recency-week';
     if (diffDays <= 30) return 'recency-month';
     return 'recency-old';
