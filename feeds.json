@@ -27,7 +27,13 @@
         {"name": "sadgrl", "url": "https://sadgrl.online/posts/rss.xml", "limit": 3},
         {"name": "Vaughn Tan", "url": "https://vaughntan.org/feed.rss", "limit": 3},
         {"name": "freyavie", "url": "https://freyavie.blog/feed/?type=rss", "limit": 3},
-        {"name": "ryeones", "url": "https://www.ryeones.com/feed.xml", "limit": 3}
+        {"name": "ryeones", "url": "https://www.ryeones.com/feed.xml", "limit": 3},
+        {"name": "David Perell", "url": "https://perell.com/feed/", "limit": 3},
+        {"name": "Sam Altman", "url": "https://blog.samaltman.com/posts.atom", "limit": 3},
+        {"name": "Prasatt", "url": "https://prasatt.me/feed/", "limit": 3},
+        {"name": "Rebecca Toh", "url": "https://rebeccatoh.pika.page/posts_feed", "limit": 3},
+        {"name": "Rosipov", "url": "https://rosipov.com/atom.xml", "limit": 3},
+        {"name": "Small Things Mostly", "url": "https://smallthingsmostly.me/feed.rss", "limit": 3}
       ]
     },
     {
@@ -57,12 +63,13 @@
     "dumbphones"
   ],
   "youtube_channels": [
-    {"name": "Linus Tech Tips", "channel_id": "UCXuqSBlHAE6Xw-yeJA0Tunw", "category": "Tech", "limit": 3},
-    {"name": "MKBHD", "channel_id": "UCBJycsmduvYEL83R_U4JriQ", "category": "Tech", "limit": 3},
-    {"name": "The Verge", "channel_id": "UCddiUEpeqJcYeBxX1IVBKvQ", "category": "Tech", "limit": 3},
-    {"name": "Lofi Girl", "channel_id": "UCSJ4gkVC6NrvII8umztf0Ow", "category": "Chill", "limit": 3},
-    {"name": "ChilledCow", "channel_id": "UCOxqgCwgOqC2lMqC5PYz_Dg", "category": "Chill", "limit": 3},
-    {"name": "Philip DeFranco", "channel_id": "UClFSU9_bUb4Rc6OYfTt5SPw", "category": "Update", "limit": 3}
+    {"name": "Seytonic", "channel_id": "UCW6xlqxSY3gGur4PkGPEUeA", "category": "Security/Hacking", "limit": 3},
+    {"name": "Low Level", "channel_id": "UC6biysICWOJ-C3P4Tyeggzg", "category": "Programming/Low-Level", "limit": 3},
+    {"name": "Dev Detour", "channel_id": "UCXSFnQc5niQR7jHMf0U7aQA", "category": "Programming/Dev", "limit": 3},
+    {"name": "Fireship", "channel_id": "UCsBjURrPoezykLs9EqgamOA", "category": "Programming/Web Dev", "limit": 3},
+    {"name": "Computerphile", "channel_id": "UC9-y-6csu5WGm29I7JiwpnA", "category": "Computer Science", "limit": 3},
+    {"name": "Hak5", "channel_id": "UC3s0BtrBJpwNDaflRSoiieQ", "category": "Security/Hacking", "limit": 3},
+    {"name": "Cyb3rMaddy", "channel_id": "UCgd5-BWtbgOw5Hx2wP3qxzg", "category": "Cybersecurity", "limit": 3}
   ],
   "twitch_channels": [
     "pokimane",

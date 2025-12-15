@@ -4,12 +4,13 @@
  */
 const FEEDS = {
   youtube: [
-    { name: 'Linus Tech Tips', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCXuqSBlHAE6Xw-yeJA0Tunw', limit: 3 },
-    { name: 'MKBHD', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCBJycsmduvYEL83R_U4JriQ', limit: 3 },
-    { name: 'The Verge', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCddiUEpeqJcYeBxX1IVBKvQ', limit: 3 },
-    { name: 'Lofi Girl', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCSJ4gkVC6NrvII8umztf0Ow', limit: 3 },
-    { name: 'ChilledCow', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCOxqgCwgOqC2lMqC5PYz_Dg', limit: 3 },
-    { name: 'Philip DeFranco', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UClFSU9_bUb4Rc6OYfTt5SPw', limit: 3 }
+    { name: 'Seytonic', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCW6xlqxSY3gGur4PkGPEUeA', limit: 3 },
+    { name: 'Low Level', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC6biysICWOJ-C3P4Tyeggzg', limit: 3 },
+    { name: 'Dev Detour', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCXSFnQc5niQR7jHMf0U7aQA', limit: 3 },
+    { name: 'Fireship', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCsBjURrPoezykLs9EqgamOA', limit: 3 },
+    { name: 'Computerphile', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC9-y-6csu5WGm29I7JiwpnA', limit: 3 },
+    { name: 'Hak5', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC3s0BtrBJpwNDaflRSoiieQ', limit: 3 },
+    { name: 'Cyb3rMaddy', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCgd5-BWtbgOw5Hx2wP3qxzg', limit: 3 }
   ],
   blogs: [
     { name: 'Guan Jie', url: 'https://guanjiefung.com/feed/', limit: 3 },
@@ -36,7 +37,13 @@ const FEEDS = {
     { name: 'sadgrl', url: 'https://sadgrl.online/posts/rss.xml', limit: 3 },
     { name: 'Vaughn Tan', url: 'https://vaughntan.org/feed.rss', limit: 3 },
     { name: 'freyavie', url: 'https://freyavie.blog/feed/?type=rss', limit: 3 },
-    { name: 'ryeones', url: 'https://www.ryeones.com/feed.xml', limit: 3 }
+    { name: 'ryeones', url: 'https://www.ryeones.com/feed.xml', limit: 3 },
+    { name: 'David Perell', url: 'https://perell.com/feed/', limit: 3 },
+    { name: 'Sam Altman', url: 'https://blog.samaltman.com/posts.atom', limit: 3 },
+    { name: 'Prasatt', url: 'https://prasatt.me/feed/', limit: 3 },
+    { name: 'Rebecca Toh', url: 'https://rebeccatoh.pika.page/posts_feed', limit: 3 },
+    { name: 'Rosipov', url: 'https://rosipov.com/atom.xml', limit: 3 },
+    { name: 'Small Things Mostly', url: 'https://smallthingsmostly.me/feed.rss', limit: 3 }
   ],
   security: [
     { name: 'Hackread', url: 'https://hackread.com/feed/', limit: 3 },

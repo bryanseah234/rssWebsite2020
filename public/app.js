@@ -60,7 +60,7 @@ async function setupSections() {
     FEEDS.youtube.forEach(feed => {
       const card = createFeedCard(feed.name, 'youtube');
       grid.appendChild(card);
-      feedConfigs.push({ feed, card });
+      feedConfigs.push({ feed, card, grid, section: 'youtube' });
     });
   }
   
@@ -70,7 +70,7 @@ async function setupSections() {
     FEEDS.blogs.forEach(feed => {
       const card = createFeedCard(feed.name, 'blogs');
       grid.appendChild(card);
-      feedConfigs.push({ feed, card });
+      feedConfigs.push({ feed, card, grid, section: 'blogs' });
     });
   }
   
@@ -80,7 +80,7 @@ async function setupSections() {
     FEEDS.security.forEach(feed => {
       const card = createFeedCard(feed.name, 'security');
       grid.appendChild(card);
-      feedConfigs.push({ feed, card });
+      feedConfigs.push({ feed, card, grid, section: 'security' });
     });
   }
   
@@ -90,7 +90,7 @@ async function setupSections() {
     FEEDS.subreddits.forEach(feed => {
       const card = createFeedCard(feed.name, 'subreddits');
       grid.appendChild(card);
-      feedConfigs.push({ feed, card });
+      feedConfigs.push({ feed, card, grid, section: 'subreddits' });
     });
   }
   
@@ -100,7 +100,7 @@ async function setupSections() {
     FEEDS.twitch.forEach(feed => {
       const card = createFeedCard(feed.name, 'twitch');
       grid.appendChild(card);
-      feedConfigs.push({ feed, card });
+      feedConfigs.push({ feed, card, grid, section: 'twitch' });
     });
   }
   
@@ -108,6 +108,9 @@ async function setupSections() {
   
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
+  
+  // Sort feeds by recency within each section
+  sortFeedsByRecency();
   
   // Move failed/empty feed cards to offline section by hiding them from main grid
   document.querySelectorAll('.feed-card.error').forEach(card => {
@@ -216,6 +219,15 @@ function updateFeedCard(card, data, initialLimit = 3) {
     });
     
     return;
+  }
+  
+  // Store the most recent article date for sorting
+  if (data.items[0]?.pubDate) {
+    card.dataset.latestDate = data.items[0].pubDate;
+    
+    // Apply recency-based color class
+    const recencyClass = getRecencyClass(data.items[0].pubDate);
+    card.classList.add(recencyClass);
   }
   
   // Store all items in dataset
@@ -757,6 +769,56 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+/**
+ * Get recency class based on article age
+ */
+function getRecencyClass(dateStr) {
+  if (!dateStr) return 'recency-old';
+  
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return 'recency-old';
+    
+    const now = new Date();
+    const diffMs = now - date;
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'recency-today';
+    if (diffDays <= 7) return 'recency-week';
+    if (diffDays <= 30) return 'recency-month';
+    return 'recency-old';
+  } catch {
+    return 'recency-old';
+  }
+}
+
+/**
+ * Sort feed cards by recency within each section
+ */
+function sortFeedsByRecency() {
+  const sections = ['youtube', 'blogs', 'security', 'subreddits', 'twitch'];
+  
+  sections.forEach(section => {
+    const grid = document.getElementById(`${section}-grid`);
+    if (!grid) return;
+    
+    // Get all feed cards in this grid (excluding error cards)
+    const cards = Array.from(grid.querySelectorAll('.feed-card:not(.error)'));
+    
+    // Sort by latest date (most recent first)
+    cards.sort((a, b) => {
+      const dateA = a.dataset.latestDate ? new Date(a.dataset.latestDate).getTime() : 0;
+      const dateB = b.dataset.latestDate ? new Date(b.dataset.latestDate).getTime() : 0;
+      return dateB - dateA; // Descending order (most recent first)
+    });
+    
+    // Re-append cards in sorted order
+    cards.forEach(card => {
+      grid.appendChild(card);
+    });
+  });
 }
 
 // Start the app when DOM is ready
