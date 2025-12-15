@@ -785,7 +785,7 @@ function getRecencyClass(dateStr) {
     const diffMs = now - date;
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 0) return 'recency-today';
+    if (diffDays < 1) return 'recency-today';
     if (diffDays <= 7) return 'recency-week';
     if (diffDays <= 30) return 'recency-month';
     return 'recency-old';
@@ -811,7 +811,12 @@ function sortFeedsByRecency() {
     cards.sort((a, b) => {
       const dateA = a.dataset.latestDate ? new Date(a.dataset.latestDate).getTime() : 0;
       const dateB = b.dataset.latestDate ? new Date(b.dataset.latestDate).getTime() : 0;
-      return dateB - dateA; // Descending order (most recent first)
+      
+      // Handle NaN values (invalid dates)
+      const timeA = isNaN(dateA) ? 0 : dateA;
+      const timeB = isNaN(dateB) ? 0 : dateB;
+      
+      return timeB - timeA; // Descending order (most recent first)
     });
     
     // Re-append cards in sorted order
