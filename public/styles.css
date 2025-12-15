@@ -481,6 +481,11 @@ body {
   
   .header-left, .header-center, .header-right {
     width: 100%;
+    justify-content: center;
+  }
+  
+  .header-left {
+    order: 1;
   }
   
   .header-center {
@@ -489,14 +494,17 @@ body {
   
   .header-right {
     order: 3;
-    justify-content: center;
   }
   
   .header-tabs {
     width: 100%;
-    justify-content: space-around;
+    justify-content: center;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+  }
+  
+  .logo {
+    justify-content: center;
   }
   
   .logo h1 {

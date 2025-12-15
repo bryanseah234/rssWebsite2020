@@ -490,8 +490,8 @@
                     var feedList = widget.querySelector('.feed-list');
                     var hiddenItems = feedList.querySelectorAll('.hidden-item');
                     
-                    // Show next batch (5 items at a time)
-                    var itemsToShow = 5;
+                    // Show next batch (12 items at a time to reach 15 total with initial 3)
+                    var itemsToShow = 12;
                     var shown = 0;
                     for (var i = 0; i < hiddenItems.length && shown < itemsToShow; i++) {
                         if (hiddenItems[i].classList.contains('hidden-item')) {
