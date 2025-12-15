@@ -137,10 +137,32 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
                 log(f"Error parsing date: {e}")
                 time_ago = ''
 
+            # Extract thumbnail from various sources
+            thumbnail = ''
+            
+            # Try media:thumbnail
+            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail and len(entry.media_thumbnail) > 0:
+                thumbnail = entry.media_thumbnail[0].get('url', '')
+            
+            # Try media:content
+            elif hasattr(entry, 'media_content') and entry.media_content and len(entry.media_content) > 0:
+                media = entry.media_content[0]
+                # Check if it's an image
+                if media.get('medium') == 'image' or 'image' in media.get('type', ''):
+                    thumbnail = media.get('url', '')
+            
+            # Try enclosures (common in podcasts and some feeds)
+            if not thumbnail and hasattr(entry, 'enclosures') and entry.enclosures:
+                for enclosure in entry.enclosures:
+                    if enclosure.get('type', '').startswith('image/'):
+                        thumbnail = enclosure.get('href', '')
+                        break
+
             items.append({
                 'title': entry.get('title', 'No title')[:150],
                 'link': entry.get('link', '#'),
-                'published': time_ago
+                'published': time_ago,
+                'thumbnail': thumbnail
             })
 
         log(f"Returning {len(items)} items from {url}")
@@ -225,11 +247,25 @@ def fetch_reddit(subreddit, limit=5):
             posts = []
             for post in data['data']['children'][:limit]:
                 p = post['data']
+                
+                # Extract thumbnail
+                thumbnail = ''
+                if p.get('thumbnail') and p.get('thumbnail') not in ['self', 'default', 'nsfw', 'spoiler']:
+                    thumbnail = p.get('thumbnail')
+                elif p.get('preview') and p.get('preview', {}).get('images'):
+                    # Get the first preview image
+                    images = p['preview']['images']
+                    if images and len(images) > 0:
+                        image = images[0]
+                        if 'source' in image:
+                            thumbnail = image['source'].get('url', '').replace('&amp;', '&')
+                
                 posts.append({
                     'title': p.get('title', '')[:150],
                     'link': f"https://reddit.com{p.get('permalink', '')}",
                     'score': p.get('score', 0),
-                    'comments': p.get('num_comments', 0)
+                    'comments': p.get('num_comments', 0),
+                    'thumbnail': thumbnail
                 })
 
             log(f"Returning {len(posts)} posts from r/{subreddit}")
@@ -268,11 +304,21 @@ def fetch_reddit(subreddit, limit=5):
 
         posts = []
         for entry in feed.entries[:limit]:
+            # Try to extract thumbnail from media elements
+            thumbnail = ''
+            if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail and len(entry.media_thumbnail) > 0:
+                thumbnail = entry.media_thumbnail[0].get('url', '')
+            elif hasattr(entry, 'media_content') and entry.media_content and len(entry.media_content) > 0:
+                media = entry.media_content[0]
+                if media.get('medium') == 'image' or 'image' in media.get('type', ''):
+                    thumbnail = media.get('url', '')
+            
             posts.append({
                 'title': entry.get('title', 'No title')[:150],
                 'link': entry.get('link', '#'),
                 'score': 0,  # RSS doesn't provide score
-                'comments': 0  # RSS doesn't provide comment count
+                'comments': 0,  # RSS doesn't provide comment count
+                'thumbnail': thumbnail
             })
 
         log(f"Returning {len(posts)} posts from r/{subreddit} via RSS")
@@ -286,13 +332,14 @@ def fetch_reddit(subreddit, limit=5):
 
 
 def fetch_youtube(channel_id, channel_name, limit=3):
-    """Fetch YouTube channel videos via RSS feed (text-only)"""
+    """Fetch YouTube channel videos via RSS feed with thumbnail support"""
     try:
         log(f"Fetching YouTube: {channel_name} ({channel_id})")
         import feedparser
         import requests
         from datetime import datetime
         from dateutil import parser as date_parser
+        import re
 
         url = f'https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}'
         headers = {
@@ -319,12 +366,21 @@ def fetch_youtube(channel_id, channel_name, limit=3):
                 log(f"Error parsing date: {e}")
                 time_ago = ''
 
-            # Extract thumbnail from media:thumbnail or media_thumbnail
+            # Extract thumbnail from media:thumbnail or construct from video ID
             thumbnail = ''
             if hasattr(entry, 'media_thumbnail') and entry.media_thumbnail and len(entry.media_thumbnail) > 0:
                 thumbnail = entry.media_thumbnail[0].get('url', '')
             elif hasattr(entry, 'media_content') and entry.media_content and len(entry.media_content) > 0:
                 thumbnail = entry.media_content[0].get('url', '')
+            
+            # If no thumbnail found, try to extract video ID from link and construct thumbnail URL
+            if not thumbnail:
+                video_link = entry.get('link', '')
+                video_id_match = re.search(r'(?:v=|/videos/|/embed/|youtu\.be/)([a-zA-Z0-9_-]{11})', video_link)
+                if video_id_match:
+                    video_id = video_id_match.group(1)
+                    thumbnail = f'https://img.youtube.com/vi/{video_id}/mqdefault.jpg'
+                    log(f"Constructed thumbnail URL from video ID: {video_id}")
 
             videos.append({
                 'title': entry.get('title', 'No title')[:150],

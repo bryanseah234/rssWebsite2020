@@ -82,10 +82,15 @@
                             {% for item in feed['all_items'] %}
                                 <li class="feed-item {% if loop.index > feed['items']|length %}hidden-item{% endif %}" data-item-index="{{ loop.index }}">
                                     <a href="{{ item.link }}" target="_blank" rel="noopener">
-                                        <div class="feed-title">{{ item.title }}</div>
-                                        {% if item.published %}
-                                            <div class="feed-time">{{ item.published }}</div>
+                                        {% if item.thumbnail %}
+                                            <img src="{{ item.thumbnail }}" alt="" class="feed-item-thumbnail" loading="lazy">
                                         {% endif %}
+                                        <div class="feed-item-content">
+                                            <div class="feed-title">{{ item.title }}</div>
+                                            {% if item.published %}
+                                                <div class="feed-time">{{ item.published }}</div>
+                                            {% endif %}
+                                        </div>
                                     </a>
                                 </li>
                             {% endfor %}
@@ -225,7 +230,12 @@
                                         {% for post in reddit.posts %}
                                             <li class="feed-item">
                                                 <a href="{{ post.link }}" target="_blank" rel="noopener">
-                                                    <div class="feed-title">{{ post.title }}</div>
+                                                    {% if post.thumbnail %}
+                                                        <img src="{{ post.thumbnail }}" alt="" class="feed-item-thumbnail" loading="lazy">
+                                                    {% endif %}
+                                                    <div class="feed-item-content">
+                                                        <div class="feed-title">{{ post.title }}</div>
+                                                    </div>
                                                 </a>
                                             </li>
                                         {% endfor %}

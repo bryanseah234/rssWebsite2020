@@ -210,9 +210,12 @@ function updateFeedCard(card, data, initialLimit = 5) {
   itemsEl.innerHTML = initialItems.map((item, index) => `
     <li class="feed-item" data-index="${index}">
       <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
-        <div class="feed-item-title">${escapeHtml(item.title)}</div>
-        ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
-        <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+        ${item.thumbnail ? `<img src="${escapeHtml(item.thumbnail)}" alt="" class="feed-item-thumbnail" loading="lazy">` : ''}
+        <div class="feed-item-content">
+          <div class="feed-item-title">${escapeHtml(item.title)}</div>
+          ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+          <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+        </div>
       </a>
     </li>
   `).join('');
@@ -633,9 +636,12 @@ function loadMoreModalItems() {
 function createFeedItemHTML(item, index) {
   return `
     <a href="${escapeHtml(item.link)}" class="feed-item-link" target="_blank" rel="noopener noreferrer">
-      <div class="feed-item-title">${escapeHtml(item.title)}</div>
-      ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
-      <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+      ${item.thumbnail ? `<img src="${escapeHtml(item.thumbnail)}" alt="" class="feed-item-thumbnail" loading="lazy">` : ''}
+      <div class="feed-item-content">
+        <div class="feed-item-title">${escapeHtml(item.title)}</div>
+        ${item.text ? `<div class="feed-item-text">${escapeHtml(truncateText(item.text))}</div>` : ''}
+        <div class="feed-item-meta">${formatRelativeTime(item.pubDate)}</div>
+      </div>
     </a>
   `;
 }

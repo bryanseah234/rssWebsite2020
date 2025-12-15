@@ -298,7 +298,7 @@ body {
 
 .feed-item-link {
   display: flex;
-  flex-direction: column;
+  gap: 12px;
   padding: 14px 18px;
   text-decoration: none;
   color: inherit;
@@ -308,6 +308,22 @@ body {
 
 .feed-item-link:hover {
   background: var(--bg-card-hover);
+}
+
+.feed-item-thumbnail {
+  width: 120px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+}
+
+.feed-item-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .feed-item-title {
