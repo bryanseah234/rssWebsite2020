@@ -8,6 +8,7 @@ const CONCURRENCY_LIMIT = 6;
 const API_ENDPOINT = '/api/rss';
 const EXTENDED_FETCH_LIMIT = 50; // Increased to support infinite scroll in modal
 const MODAL_LOAD_INCREMENT = 10;
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
 
 // State
 let currentSection = 'youtube';
@@ -783,7 +784,7 @@ function getRecencyClass(dateStr) {
     
     const now = new Date();
     const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffDays = Math.floor(diffMs / MS_PER_DAY);
     
     if (diffDays < 1) return 'recency-today';
     if (diffDays <= 7) return 'recency-week';
@@ -812,11 +813,8 @@ function sortFeedsByRecency() {
       const dateA = a.dataset.latestDate ? new Date(a.dataset.latestDate).getTime() : 0;
       const dateB = b.dataset.latestDate ? new Date(b.dataset.latestDate).getTime() : 0;
       
-      // Handle NaN values (invalid dates)
-      const timeA = isNaN(dateA) ? 0 : dateA;
-      const timeB = isNaN(dateB) ? 0 : dateB;
-      
-      return timeB - timeA; // Descending order (most recent first)
+      // Handle NaN values (invalid dates) by treating them as 0
+      return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
     });
     
     // Re-append cards in sorted order
