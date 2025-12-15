@@ -30,6 +30,9 @@ async function init() {
   // Set current year
   document.getElementById('year').textContent = new Date().getFullYear();
   
+  // Setup theme toggle
+  setupThemeToggle();
+  
   // Setup sections and load feeds
   await setupSections();
   
@@ -59,7 +62,6 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
-    updateTabCount('youtube', FEEDS.youtube.length);
   }
   
   // Blogs section
@@ -70,7 +72,6 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
-    updateTabCount('blogs', FEEDS.blogs.length);
   }
   
   // Security section
@@ -81,7 +82,6 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
-    updateTabCount('security', FEEDS.security.length);
   }
   
   // Subreddits section
@@ -92,7 +92,6 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
-    updateTabCount('subreddits', FEEDS.subreddits.length);
   }
   
   // Twitch section
@@ -103,11 +102,9 @@ async function setupSections() {
       grid.appendChild(card);
       feedConfigs.push({ feed, card });
     });
-    updateTabCount('twitch', FEEDS.twitch.length);
   }
   
   totalFeeds = feedConfigs.length;
-  updateFeedCount();
   
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
@@ -164,7 +161,6 @@ async function fetchFeed(feed, card) {
     showFeedError(card, error.message, feed);
   } finally {
     loadedFeeds++;
-    updateFeedCount();
   }
 }
 
@@ -266,27 +262,8 @@ function showFeedError(card, error, feed) {
  * Display offline feeds section
  */
 function displayOfflineFeeds() {
-  const offlineSection = document.getElementById('offline-section');
-  const offlineGrid = document.getElementById('offline-grid');
-  const offlineCount = document.getElementById('offline-count');
-  
-  offlineCount.textContent = failedFeeds.length;
-  
-  offlineGrid.innerHTML = failedFeeds.map(feed => `
-    <div class="feed-card error offline-card">
-      <div class="feed-card-header">
-        <span class="feed-card-title">${escapeHtml(feed.name)}</span>
-        <span class="feed-card-count">Error</span>
-      </div>
-      <ul class="feed-items">
-        <li class="error-message">Failed to load feed</li>
-        <li class="error-message" style="font-size: 11px; color: var(--text-muted);">Category: ${feed.category}</li>
-        <li class="error-message" style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(feed.error)}</li>
-      </ul>
-    </div>
-  `).join('');
-  
-  offlineSection.style.display = 'block';
+  // Filter based on current section
+  filterOfflineFeeds(currentSection);
 }
 
 /**
@@ -317,13 +294,64 @@ window.toggleOfflineSection = toggleOfflineSection;
  * Setup tab navigation
  */
 function setupTabNavigation() {
-  const tabs = document.querySelectorAll('.tab-btn');
+  const tabs = document.querySelectorAll('.header-tab');
   
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const section = tab.dataset.section;
       switchSection(section);
     });
+  });
+}
+
+/**
+ * Setup theme toggle
+ */
+function setupThemeToggle() {
+  const STORAGE_KEY = 'prawnfeeds-theme';
+  const DEFAULT_THEME = 'system';
+  
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  
+  function getSavedTheme() {
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
+  }
+  
+  function applyTheme(theme) {
+    let actualTheme = theme;
+    if (theme === 'system') {
+      actualTheme = getSystemTheme();
+    }
+    document.documentElement.setAttribute('data-theme', actualTheme);
+    
+    // Update active button
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+  }
+  
+  function setTheme(theme) {
+    localStorage.setItem(STORAGE_KEY, theme);
+    applyTheme(theme);
+  }
+  
+  // Apply theme immediately
+  applyTheme(getSavedTheme());
+  
+  // Add click handlers
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      setTheme(this.dataset.theme);
+    });
+  });
+  
+  // Listen for system theme changes
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+    if (getSavedTheme() === 'system') {
+      applyTheme('system');
+    }
   });
 }
 
@@ -444,13 +472,13 @@ function switchSection(sectionName) {
     s.classList.remove('active');
     s.setAttribute('aria-hidden', 'true');
   });
-  document.querySelectorAll('.tab-btn').forEach(t => {
+  document.querySelectorAll('.header-tab').forEach(t => {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
   
   const newSection = document.getElementById(`${sectionName}-section`);
-  const newTab = document.querySelector(`.tab-btn[data-section="${sectionName}"]`);
+  const newTab = document.querySelector(`.header-tab[data-section="${sectionName}"]`);
   
   if (newSection && newTab) {
     newSection.classList.add('active');
@@ -465,6 +493,9 @@ function switchSection(sectionName) {
       window.scrollTo(0, savedPosition);
     }, 50);
   }
+  
+  // Filter offline feeds by current section
+  filterOfflineFeeds(sectionName);
 }
 
 /**
@@ -610,26 +641,53 @@ function createFeedItemHTML(item, index) {
 }
 
 /**
- * Update the feed count display
+ * Filter offline feeds to show only those relevant to current section
  */
-function updateFeedCount() {
-  const countEl = document.getElementById('feed-count');
-  if (loadedFeeds < totalFeeds) {
-    countEl.textContent = `Loading ${loadedFeeds}/${totalFeeds} feeds...`;
-  } else {
-    countEl.textContent = `${totalFeeds} feeds loaded`;
+function filterOfflineFeeds(sectionName) {
+  const offlineGrid = document.getElementById('offline-grid');
+  if (!offlineGrid) return;
+  
+  // Map section names to categories
+  const sectionCategories = {
+    'youtube': ['youtube'],
+    'blogs': ['blogs'],
+    'security': ['security'],
+    'subreddits': ['subreddits'],
+    'twitch': ['twitch']
+  };
+  
+  const relevantCategories = sectionCategories[sectionName] || [];
+  
+  // Filter and display only relevant offline feeds
+  const relevantFeeds = failedFeeds.filter(feed => 
+    relevantCategories.includes(feed.category)
+  );
+  
+  const offlineSection = document.getElementById('offline-section');
+  const offlineCount = document.getElementById('offline-count');
+  
+  if (relevantFeeds.length === 0) {
+    offlineSection.style.display = 'none';
+    return;
   }
-}
-
-/**
- * Update tab count badge
- */
-function updateTabCount(section, count) {
-  const countEl = document.getElementById(`${section}-tab-count`);
-  if (countEl) {
-    countEl.textContent = count;
-    countEl.setAttribute('aria-label', `${count} feeds`);
-  }
+  
+  offlineCount.textContent = relevantFeeds.length;
+  
+  offlineGrid.innerHTML = relevantFeeds.map(feed => `
+    <div class="feed-card error offline-card">
+      <div class="feed-card-header">
+        <span class="feed-card-title">${escapeHtml(feed.name)}</span>
+        <span class="feed-card-count">Error</span>
+      </div>
+      <ul class="feed-items">
+        <li class="error-message">Failed to load feed</li>
+        <li class="error-message" style="font-size: 11px; color: var(--text-muted);">Category: ${feed.category}</li>
+        <li class="error-message" style="font-size: 11px; color: var(--text-tertiary);">${escapeHtml(feed.error)}</li>
+      </ul>
+    </div>
+  `).join('');
+  
+  offlineSection.style.display = 'block';
 }
 
 /**

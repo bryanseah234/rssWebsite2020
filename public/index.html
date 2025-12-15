@@ -17,7 +17,7 @@
 <body>
   <header class="header">
     <div class="header-content">
-      <div class="header-top">
+      <div class="header-left">
         <div class="logo">
           <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 11a9 9 0 0 1 9 9"></path>
@@ -26,38 +26,27 @@
           </svg>
           <h1>Prawn Feeds</h1>
         </div>
-        <div class="header-stats">
-          <span id="feed-count">Loading feeds...</span>
+      </div>
+      <div class="header-center">
+        <!-- Tab navigation moved to center -->
+        <div class="header-tabs">
+          <button class="header-tab active" data-section="youtube">YouTube</button>
+          <button class="header-tab" data-section="blogs">Blogs</button>
+          <button class="header-tab" data-section="security">Security</button>
+          <button class="header-tab" data-section="subreddits">Subreddits</button>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="theme-toggle">
+          <button class="theme-btn" data-theme="light" title="Light theme" aria-label="Light theme">☀️</button>
+          <button class="theme-btn" data-theme="dark" title="Dark theme" aria-label="Dark theme">🌙</button>
+          <button class="theme-btn active" data-theme="system" title="System theme" aria-label="System theme">💻</button>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- Tab Navigation -->
-  <nav class="tab-nav" role="navigation" aria-label="Feed section navigation">
-    <div class="tab-container" role="tablist">
-      <button id="youtube-tab" class="tab-btn active" data-section="youtube" role="tab" aria-selected="true" aria-controls="youtube-section">
-        <span class="tab-label">YouTube</span>
-        <span class="tab-count" id="youtube-tab-count" aria-label="6 feeds">6</span>
-      </button>
-      <button id="blogs-tab" class="tab-btn" data-section="blogs" role="tab" aria-selected="false" aria-controls="blogs-section">
-        <span class="tab-label">Blogs</span>
-        <span class="tab-count" id="blogs-tab-count" aria-label="25 feeds">25</span>
-      </button>
-      <button id="security-tab" class="tab-btn" data-section="security" role="tab" aria-selected="false" aria-controls="security-section">
-        <span class="tab-label">Security</span>
-        <span class="tab-count" id="security-tab-count" aria-label="12 feeds">12</span>
-      </button>
-      <button id="subreddits-tab" class="tab-btn" data-section="subreddits" role="tab" aria-selected="false" aria-controls="subreddits-section">
-        <span class="tab-label">Subreddits</span>
-        <span class="tab-count" id="subreddits-tab-count" aria-label="6 feeds">6</span>
-      </button>
-      <button id="twitch-tab" class="tab-btn" data-section="twitch" role="tab" aria-selected="false" aria-controls="twitch-section">
-        <span class="tab-label">Twitch</span>
-        <span class="tab-count" id="twitch-tab-count" aria-label="15 feeds">15</span>
-      </button>
-    </div>
-  </nav>
+
 
   <!-- Swipeable Sections Container -->
   <main class="sections-container" role="main">
@@ -128,7 +117,7 @@
   </div>
 
   <footer class="footer">
-    <p>Prawn Feeds &copy; <span id="year"></span> | Powered by Vercel</p>
+    <p>Prawn Feeds &copy; <span id="year"></span></p>
   </footer>
 
   <script src="/feeds.js"></script>
