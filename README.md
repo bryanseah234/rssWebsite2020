@@ -41,8 +41,8 @@ A modern, mobile-first RSS feed aggregator with swipeable navigation and advance
 ## Usage
 
 ### Access Points
-- **Main Interface** (Flask): Visit `/` for the traditional server-rendered interface
-- **Modern Reader** (Client-side): Visit `/reader` for the swipeable, interactive experience
+- **Modern Reader** (Client-side): Visit `/` for the swipeable, interactive experience (default)
+- **Legacy Interface** (Flask): Visit `/flask` for the traditional server-rendered interface
 
 ### Keyboard Shortcuts
 - `←` / `→` Arrow keys: Navigate between sections
