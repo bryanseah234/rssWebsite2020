@@ -41,8 +41,25 @@ function parseDate(dateStr) {
 
 /**
  * Extract thumbnail URL from RSS item
- * @param {object} item - RSS item object
- * @returns {string} - Thumbnail URL or empty string
+ * 
+ * Extraction priority order:
+ * 1. media:thumbnail - Direct thumbnail reference (YouTube, Reddit)
+ * 2. media:content with image type - Content with image medium (Reddit, Twitch)
+ * 3. enclosure with image type - Attached image files (podcasts, blogs)
+ * 4. Constructed YouTube thumbnail - Built from video ID in URL
+ * 
+ * @param {object} item - RSS item object from parsed feed
+ * @returns {string} - Thumbnail URL or empty string if none found
+ * 
+ * @example
+ * // YouTube with media:thumbnail
+ * extractThumbnail({ 'media:thumbnail': { '@_url': 'https://i.ytimg.com/vi/abc/hqdefault.jpg' } })
+ * // Returns: 'https://i.ytimg.com/vi/abc/hqdefault.jpg'
+ * 
+ * @example
+ * // YouTube without thumbnail, construct from link
+ * extractThumbnail({ link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+ * // Returns: 'https://img.youtube.com/vi/dQw4w9WgXcQ/mqdefault.jpg'
  */
 function extractThumbnail(item) {
   // Try media:thumbnail (YouTube, Reddit)
@@ -76,7 +93,11 @@ function extractThumbnail(item) {
   
   // Try to construct YouTube thumbnail from video ID in link
   const link = item.link || item.guid || '';
-  if (link.includes('youtube.com') || link.includes('youtu.be')) {
+  // YouTube video IDs are always 11 characters (alphanumeric, hyphen, underscore)
+  const YOUTUBE_VIDEO_ID_LENGTH = 11;
+  const youtubePattern = /(?:youtube\.com|youtu\.be)/i;
+  
+  if (youtubePattern.test(link)) {
     const videoIdMatch = link.match(/(?:v=|\/videos\/|\/embed\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
     if (videoIdMatch) {
       return `https://img.youtube.com/vi/${videoIdMatch[1]}/mqdefault.jpg`;
