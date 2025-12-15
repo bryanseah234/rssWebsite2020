@@ -109,9 +109,9 @@ async function setupSections() {
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
   
-  // Remove failed/empty feed cards from main grid
+  // Move failed/empty feed cards to offline section by hiding them from main grid
   document.querySelectorAll('.feed-card.error').forEach(card => {
-    card.remove();
+    card.style.display = 'none';
   });
   
   // Display offline feeds section if any
@@ -201,7 +201,7 @@ function updateFeedCard(card, data, initialLimit = 3) {
   const itemsEl = card.querySelector('.feed-items');
   
   if (data.items.length === 0) {
-    // Treat as offline feed
+    // Treat as offline feed - mark as error for offline section
     card.classList.add('error');
     itemsEl.innerHTML = '<li class="error-message">No items available</li>';
     countEl.textContent = '0 items';
@@ -573,7 +573,7 @@ function openModal(feedName, feedData) {
   }
   
   // Reset modal state
-  modalLoadOffset = 15; // Start at 15 (3 initial + 12 more to show 15 total in modal)
+  modalLoadOffset = 15; // Show 15 total: skip 3 shown in card, display next 12 in modal
   modalItems = feedData.items;
   modalTotalItems = feedData.items.length;
   modalIsLoading = false;
