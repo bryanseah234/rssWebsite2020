@@ -837,11 +837,20 @@ function getTimelineArticles(feeds) {
     const cachedData = feedDataCache.get(feed.name);
     if (cachedData && cachedData.items) {
       cachedData.items.forEach(item => {
-        allArticles.push({
-          ...item,
-          sourceName: feed.name,
-          sourceUrl: feed.url
-        });
+        // Skip Reddit pinned/stickied posts
+        const isPinned = item.title?.toLowerCase().includes('[pinned]') ||
+          item.title?.toLowerCase().includes('stickied') ||
+          item.category?.toLowerCase().includes('pinned') ||
+          item.isSticky === true ||
+          item.stickied === true;
+
+        if (!isPinned) {
+          allArticles.push({
+            ...item,
+            sourceName: feed.name,
+            sourceUrl: feed.url
+          });
+        }
       });
     }
   });
