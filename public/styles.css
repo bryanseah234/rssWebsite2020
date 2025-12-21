@@ -1169,25 +1169,27 @@ body.modal-open {
 /* Timeline View Styles */
 .timeline-container {
   width: 100%;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 0 16px;
 }
 
 .timeline-list {
   list-style: none;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .timeline-item {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  margin-bottom: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition-fast);
+  width: 100%;
 }
 
 .timeline-item:hover {

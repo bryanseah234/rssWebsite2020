@@ -69,7 +69,7 @@ async function setupSections() {
   if (window.FEEDS?.youtube) {
     const grid = document.getElementById('youtube-grid');
     FEEDS.youtube.forEach(feed => {
-      const card = createFeedCard(feed.name, 'youtube');
+      const card = createFeedCard(feed.name, 'youtube', feed.url);
       grid.appendChild(card);
       feedConfigs.push({ feed, card, grid, section: 'youtube' });
     });
@@ -79,7 +79,7 @@ async function setupSections() {
   if (window.FEEDS?.blogs) {
     const grid = document.getElementById('blogs-grid');
     FEEDS.blogs.forEach(feed => {
-      const card = createFeedCard(feed.name, 'blogs');
+      const card = createFeedCard(feed.name, 'blogs', feed.url);
       grid.appendChild(card);
       feedConfigs.push({ feed, card, grid, section: 'blogs' });
     });
@@ -89,7 +89,7 @@ async function setupSections() {
   if (window.FEEDS?.security) {
     const grid = document.getElementById('security-grid');
     FEEDS.security.forEach(feed => {
-      const card = createFeedCard(feed.name, 'security');
+      const card = createFeedCard(feed.name, 'security', feed.url);
       grid.appendChild(card);
       feedConfigs.push({ feed, card, grid, section: 'security' });
     });
@@ -99,7 +99,7 @@ async function setupSections() {
   if (window.FEEDS?.subreddits) {
     const grid = document.getElementById('subreddits-grid');
     FEEDS.subreddits.forEach(feed => {
-      const card = createFeedCard(feed.name, 'subreddits');
+      const card = createFeedCard(feed.name, 'subreddits', feed.url);
       grid.appendChild(card);
       feedConfigs.push({ feed, card, grid, section: 'subreddits' });
     });
@@ -109,7 +109,7 @@ async function setupSections() {
   if (window.FEEDS?.twitch) {
     const grid = document.getElementById('twitch-grid');
     FEEDS.twitch.forEach(feed => {
-      const card = createFeedCard(feed.name, 'twitch');
+      const card = createFeedCard(feed.name, 'twitch', feed.url);
       grid.appendChild(card);
       feedConfigs.push({ feed, card, grid, section: 'twitch' });
     });
@@ -137,11 +137,12 @@ async function setupSections() {
 /**
  * Create a feed card element
  */
-function createFeedCard(name, category) {
+function createFeedCard(name, category, url = '') {
   const card = document.createElement('div');
   card.className = 'feed-card loading';
   card.dataset.name = name.toLowerCase();
   card.dataset.category = category;
+  card.dataset.url = url;
   card.innerHTML = `
     <div class="feed-card-header">
       <div class="feed-card-header-left">
@@ -208,6 +209,35 @@ async function fetchFeedsWithConcurrency(feedConfigs, limit) {
 }
 
 /**
+ * Filter out Reddit pinned posts from items array
+ * Pinned posts appear first in Reddit feeds but have older dates than subsequent posts
+ */
+function filterPinnedPosts(items, feedUrl, feedName) {
+  const isRedditFeed = feedUrl?.includes('reddit.com') || feedName?.toLowerCase().startsWith('r/');
+
+  if (!isRedditFeed || items.length <= 2) {
+    return items;
+  }
+
+  // Find how many items at the start are "out of order" (older than later items)
+  let pinnedCount = 0;
+  for (let i = 0; i < Math.min(5, items.length - 1); i++) {
+    const currentDate = new Date(items[i]?.pubDate);
+    const nextDate = new Date(items[i + 1]?.pubDate);
+
+    // If this item is older than the next, it's likely pinned
+    if (!isNaN(currentDate) && !isNaN(nextDate) && currentDate < nextDate) {
+      pinnedCount = i + 1;
+    } else {
+      break; // Once we find chronological order, stop
+    }
+  }
+
+  // Return items without the pinned ones
+  return items.slice(pinnedCount);
+}
+
+/**
  * Update feed card with data
  */
 function updateFeedCard(card, data, initialLimit = 3) {
@@ -217,7 +247,15 @@ function updateFeedCard(card, data, initialLimit = 3) {
   const countEl = card.querySelector('.feed-card-count');
   const itemsEl = card.querySelector('.feed-items');
 
-  if (data.items.length === 0) {
+  // Filter out Reddit pinned posts
+  const feedName = card.dataset.name;
+  const feedUrl = card.dataset.url || '';
+  const filteredItems = filterPinnedPosts(data.items, feedUrl, feedName);
+
+  // Use filtered items for display
+  const items = filteredItems;
+
+  if (items.length === 0) {
     // Treat as offline feed - mark as error for offline section
     card.classList.add('error');
     itemsEl.innerHTML = '<li class="error-message">No items available</li>';
@@ -236,20 +274,20 @@ function updateFeedCard(card, data, initialLimit = 3) {
   }
 
   // Store the most recent article date for sorting
-  if (data.items[0]?.pubDate) {
-    card.dataset.latestDate = data.items[0].pubDate;
+  if (items[0]?.pubDate) {
+    card.dataset.latestDate = items[0].pubDate;
 
     // Apply recency-based color class
-    const recencyClass = getRecencyClass(data.items[0].pubDate);
+    const recencyClass = getRecencyClass(items[0].pubDate);
     card.classList.add(recencyClass);
   }
 
-  // Store all items in dataset
-  card.dataset.allItems = JSON.stringify(data.items);
-  card.dataset.visibleCount = Math.min(initialLimit, data.items.length);
+  // Store all items in dataset (filtered)
+  card.dataset.allItems = JSON.stringify(items);
+  card.dataset.visibleCount = Math.min(initialLimit, items.length);
 
   // Show initial items
-  const initialItems = data.items.slice(0, initialLimit);
+  const initialItems = items.slice(0, initialLimit);
   itemsEl.innerHTML = initialItems.map((item, index) => {
     const articleRecencyClass = getRecencyClass(item.pubDate);
     return `
@@ -267,26 +305,27 @@ function updateFeedCard(card, data, initialLimit = 3) {
   }).join('');
 
   // Add load more button to header if needed
-  if (data.items.length > initialLimit) {
+  if (items.length > initialLimit) {
     // Remove existing load more button if any
     const existingBtn = headerEl.querySelector('.load-more-btn');
     if (existingBtn) existingBtn.remove();
 
     const loadMoreBtn = document.createElement('button');
     loadMoreBtn.className = 'load-more-btn';
-    loadMoreBtn.textContent = `Load More (${data.items.length - initialLimit})`;
+    loadMoreBtn.textContent = `Load More (${items.length - initialLimit})`;
     loadMoreBtn.dataset.feedName = card.dataset.name;
 
     // Add click handler
     loadMoreBtn.addEventListener('click', (e) => {
       e.preventDefault();
-      openModal(card.dataset.name, data);
+      // Pass filtered items to modal
+      openModal(card.dataset.name, { items: items });
     });
 
     headerEl.appendChild(loadMoreBtn);
   }
 
-  countEl.textContent = `${initialItems.length} of ${data.items.length}`;
+  countEl.textContent = `${initialItems.length} of ${items.length}`;
 }
 
 /**
@@ -836,21 +875,38 @@ function getTimelineArticles(feeds) {
   feeds.forEach(feed => {
     const cachedData = feedDataCache.get(feed.name);
     if (cachedData && cachedData.items) {
-      cachedData.items.forEach(item => {
-        // Skip Reddit pinned/stickied posts
-        const isPinned = item.title?.toLowerCase().includes('[pinned]') ||
-          item.title?.toLowerCase().includes('stickied') ||
-          item.category?.toLowerCase().includes('pinned') ||
-          item.isSticky === true ||
-          item.stickied === true;
+      // For Reddit feeds, detect pinned posts by checking if early items have older dates
+      const items = cachedData.items;
+      const isRedditFeed = feed.url?.includes('reddit.com') || feed.name?.toLowerCase().startsWith('r/');
 
-        if (!isPinned) {
-          allArticles.push({
-            ...item,
-            sourceName: feed.name,
-            sourceUrl: feed.url
-          });
+      let pinnedCount = 0;
+      if (isRedditFeed && items.length > 2) {
+        // Find how many items at the start are "out of order" (older than later items)
+        // Pinned posts typically appear first but have older dates
+        for (let i = 0; i < Math.min(5, items.length - 1); i++) {
+          const currentDate = new Date(items[i]?.pubDate);
+          const nextDate = new Date(items[i + 1]?.pubDate);
+
+          // If this item is older than the next, it's likely pinned
+          if (!isNaN(currentDate) && !isNaN(nextDate) && currentDate < nextDate) {
+            pinnedCount = i + 1;
+          } else {
+            break; // Once we find chronological order, stop
+          }
         }
+      }
+
+      items.forEach((item, index) => {
+        // Skip pinned posts (first N items that are out of chronological order)
+        if (isRedditFeed && index < pinnedCount) {
+          return; // Skip this pinned post
+        }
+
+        allArticles.push({
+          ...item,
+          sourceName: feed.name,
+          sourceUrl: feed.url
+        });
       });
     }
   });
