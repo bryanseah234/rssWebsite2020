@@ -39,22 +39,23 @@ let isSwiping = false;
 async function init() {
   // Set current year
   document.getElementById('year').textContent = new Date().getFullYear();
-  
+
   // Setup theme toggle
   setupThemeToggle();
-  
+
   // Setup sections and load feeds
   await setupSections();
-  
+
   // Setup event listeners
   setupTabNavigation();
+  setupMobileMenu();
   setupTouchNavigation();
   setupKeyboardNavigation();
   setupModal();
-  
+
   // Load initial section (YouTube) in timeline view
   switchSection('youtube');
-  
+
   console.log(`[RSS Dashboard] Initialized with ${totalFeeds} feeds`);
 }
 
@@ -63,7 +64,7 @@ async function init() {
  */
 async function setupSections() {
   const feedConfigs = [];
-  
+
   // YouTube section
   if (window.FEEDS?.youtube) {
     const grid = document.getElementById('youtube-grid');
@@ -73,7 +74,7 @@ async function setupSections() {
       feedConfigs.push({ feed, card, grid, section: 'youtube' });
     });
   }
-  
+
   // Blogs section
   if (window.FEEDS?.blogs) {
     const grid = document.getElementById('blogs-grid');
@@ -83,7 +84,7 @@ async function setupSections() {
       feedConfigs.push({ feed, card, grid, section: 'blogs' });
     });
   }
-  
+
   // Security section
   if (window.FEEDS?.security) {
     const grid = document.getElementById('security-grid');
@@ -93,7 +94,7 @@ async function setupSections() {
       feedConfigs.push({ feed, card, grid, section: 'security' });
     });
   }
-  
+
   // Subreddits section
   if (window.FEEDS?.subreddits) {
     const grid = document.getElementById('subreddits-grid');
@@ -103,7 +104,7 @@ async function setupSections() {
       feedConfigs.push({ feed, card, grid, section: 'subreddits' });
     });
   }
-  
+
   // Twitch section
   if (window.FEEDS?.twitch) {
     const grid = document.getElementById('twitch-grid');
@@ -113,20 +114,20 @@ async function setupSections() {
       feedConfigs.push({ feed, card, grid, section: 'twitch' });
     });
   }
-  
+
   totalFeeds = feedConfigs.length;
-  
+
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
-  
+
   // Sort feeds by recency within each section
   sortFeedsByRecency();
-  
+
   // Move failed/empty feed cards to offline section by hiding them from main grid
   document.querySelectorAll('.feed-card.error').forEach(card => {
     card.style.display = 'none';
   });
-  
+
   // Display offline feeds section if any
   if (failedFeeds.length > 0) {
     displayOfflineFeeds();
@@ -166,16 +167,16 @@ async function fetchFeed(feed, card) {
   try {
     const url = `${API_ENDPOINT}?feedUrl=${encodeURIComponent(feed.url)}&limit=${EXTENDED_FETCH_LIMIT}`;
     const response = await fetch(url);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    
+
     const data = await response.json();
-    
+
     // Cache the feed data
     feedDataCache.set(feed.name, data);
-    
+
     updateFeedCard(card, data, feed.limit);
   } catch (error) {
     showFeedError(card, error.message, feed);
@@ -190,7 +191,7 @@ async function fetchFeed(feed, card) {
 async function fetchFeedsWithConcurrency(feedConfigs, limit) {
   const queue = [...feedConfigs];
   const executing = [];
-  
+
   while (queue.length > 0 || executing.length > 0) {
     while (executing.length < limit && queue.length > 0) {
       const { feed, card } = queue.shift();
@@ -199,7 +200,7 @@ async function fetchFeedsWithConcurrency(feedConfigs, limit) {
       });
       executing.push(promise);
     }
-    
+
     if (executing.length > 0) {
       await Promise.race(executing);
     }
@@ -211,17 +212,17 @@ async function fetchFeedsWithConcurrency(feedConfigs, limit) {
  */
 function updateFeedCard(card, data, initialLimit = 3) {
   card.classList.remove('loading');
-  
+
   const headerEl = card.querySelector('.feed-card-header');
   const countEl = card.querySelector('.feed-card-count');
   const itemsEl = card.querySelector('.feed-items');
-  
+
   if (data.items.length === 0) {
     // Treat as offline feed - mark as error for offline section
     card.classList.add('error');
     itemsEl.innerHTML = '<li class="error-message">No items available</li>';
     countEl.textContent = '0 items';
-    
+
     // Track as failed feed for offline section
     const feedName = card.dataset.name || 'Unknown Feed';
     failedFeeds.push({
@@ -230,23 +231,23 @@ function updateFeedCard(card, data, initialLimit = 3) {
       category: card.dataset.category,
       error: 'No items available'
     });
-    
+
     return;
   }
-  
+
   // Store the most recent article date for sorting
   if (data.items[0]?.pubDate) {
     card.dataset.latestDate = data.items[0].pubDate;
-    
+
     // Apply recency-based color class
     const recencyClass = getRecencyClass(data.items[0].pubDate);
     card.classList.add(recencyClass);
   }
-  
+
   // Store all items in dataset
   card.dataset.allItems = JSON.stringify(data.items);
   card.dataset.visibleCount = Math.min(initialLimit, data.items.length);
-  
+
   // Show initial items
   const initialItems = data.items.slice(0, initialLimit);
   itemsEl.innerHTML = initialItems.map((item, index) => {
@@ -264,27 +265,27 @@ function updateFeedCard(card, data, initialLimit = 3) {
     </li>
   `;
   }).join('');
-  
+
   // Add load more button to header if needed
   if (data.items.length > initialLimit) {
     // Remove existing load more button if any
     const existingBtn = headerEl.querySelector('.load-more-btn');
     if (existingBtn) existingBtn.remove();
-    
+
     const loadMoreBtn = document.createElement('button');
     loadMoreBtn.className = 'load-more-btn';
     loadMoreBtn.textContent = `Load More (${data.items.length - initialLimit})`;
     loadMoreBtn.dataset.feedName = card.dataset.name;
-    
+
     // Add click handler
     loadMoreBtn.addEventListener('click', (e) => {
       e.preventDefault();
       openModal(card.dataset.name, data);
     });
-    
+
     headerEl.appendChild(loadMoreBtn);
   }
-  
+
   countEl.textContent = `${initialItems.length} of ${data.items.length}`;
 }
 
@@ -294,13 +295,13 @@ function updateFeedCard(card, data, initialLimit = 3) {
 function showFeedError(card, error, feed) {
   card.classList.remove('loading');
   card.classList.add('error');
-  
+
   const countEl = card.querySelector('.feed-card-count');
   const itemsEl = card.querySelector('.feed-items');
-  
+
   countEl.textContent = 'Error';
   itemsEl.innerHTML = '<li class="error-message">Failed to load feed</li>';
-  
+
   // Track failed feed for grouping
   failedFeeds.push({
     name: feed.name,
@@ -308,7 +309,7 @@ function showFeedError(card, error, feed) {
     category: card.dataset.category,
     error: error
   });
-  
+
   console.error(`[Feed Error] ${card.dataset.name}:`, error);
 }
 
@@ -327,7 +328,7 @@ function toggleOfflineSection() {
   const content = document.getElementById('offline-content');
   const header = document.querySelector('.offline-header');
   const indicator = document.querySelector('.offline-header .collapse-indicator');
-  
+
   if (content.classList.contains('expanded')) {
     content.classList.remove('expanded');
     header.classList.remove('expanded');
@@ -349,7 +350,7 @@ window.toggleOfflineSection = toggleOfflineSection;
  */
 function setupTabNavigation() {
   const tabs = document.querySelectorAll('.header-tab');
-  
+
   tabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const section = tab.dataset.section;
@@ -364,7 +365,7 @@ function setupTabNavigation() {
 function handleTabClick(section) {
   if (section === currentSection) {
     // Same tab clicked - toggle view
-    sectionViewState[section] = 
+    sectionViewState[section] =
       sectionViewState[section] === 'timeline' ? 'cards' : 'timeline';
     renderSectionView(section);
     updateTabIndicator(section);
@@ -372,6 +373,129 @@ function handleTabClick(section) {
     // Different tab clicked - switch section
     switchSection(section);
   }
+
+  // Update mobile nav active state
+  updateMobileNavActive(section);
+}
+
+/**
+ * Setup mobile menu interactions
+ */
+function setupMobileMenu() {
+  const hamburgerBtn = document.getElementById('hamburger-btn');
+  const mobileNavDropdown = document.getElementById('mobile-nav-dropdown');
+  const mobileThemeBtn = document.getElementById('mobile-theme-btn');
+  const mobileThemeDropdown = document.getElementById('mobile-theme-dropdown');
+
+  // Hamburger menu toggle
+  if (hamburgerBtn && mobileNavDropdown) {
+    hamburgerBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = hamburgerBtn.classList.toggle('active');
+      mobileNavDropdown.classList.toggle('active', isOpen);
+      hamburgerBtn.setAttribute('aria-expanded', isOpen);
+      mobileNavDropdown.setAttribute('aria-hidden', !isOpen);
+
+      // Close theme dropdown if open
+      if (mobileThemeDropdown) {
+        mobileThemeDropdown.classList.remove('active');
+        mobileThemeBtn?.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // Mobile nav item clicks
+  document.querySelectorAll('.mobile-nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const section = item.dataset.section;
+      handleTabClick(section);
+
+      // Close dropdown
+      hamburgerBtn?.classList.remove('active');
+      mobileNavDropdown?.classList.remove('active');
+      hamburgerBtn?.setAttribute('aria-expanded', 'false');
+      mobileNavDropdown?.setAttribute('aria-hidden', 'true');
+    });
+  });
+
+  // Mobile theme button toggle
+  if (mobileThemeBtn && mobileThemeDropdown) {
+    mobileThemeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = mobileThemeDropdown.classList.toggle('active');
+      mobileThemeBtn.setAttribute('aria-expanded', isOpen);
+
+      // Close nav dropdown if open
+      if (mobileNavDropdown) {
+        mobileNavDropdown.classList.remove('active');
+        hamburgerBtn?.classList.remove('active');
+        hamburgerBtn?.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
+  // Mobile theme option clicks
+  document.querySelectorAll('.mobile-theme-option').forEach(option => {
+    option.addEventListener('click', () => {
+      const theme = option.dataset.theme;
+
+      // Apply theme using existing theme logic
+      localStorage.setItem('prawnfeeds-theme', theme);
+      applyThemeFromStorage();
+
+      // Update active state
+      document.querySelectorAll('.mobile-theme-option').forEach(opt =>
+        opt.classList.toggle('active', opt.dataset.theme === theme)
+      );
+
+      // Close dropdown
+      mobileThemeDropdown?.classList.remove('active');
+      mobileThemeBtn?.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Close dropdowns when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.mobile-nav-dropdown') &&
+      !e.target.closest('.hamburger-btn')) {
+      mobileNavDropdown?.classList.remove('active');
+      hamburgerBtn?.classList.remove('active');
+      hamburgerBtn?.setAttribute('aria-expanded', 'false');
+      mobileNavDropdown?.setAttribute('aria-hidden', 'true');
+    }
+
+    if (!e.target.closest('.mobile-theme-dropdown') &&
+      !e.target.closest('.mobile-theme-btn')) {
+      mobileThemeDropdown?.classList.remove('active');
+      mobileThemeBtn?.setAttribute('aria-expanded', 'false');
+    }
+  });
+}
+
+/**
+ * Update mobile nav active state
+ */
+function updateMobileNavActive(section) {
+  document.querySelectorAll('.mobile-nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.section === section);
+  });
+}
+
+/**
+ * Apply theme from storage (helper for mobile theme)
+ */
+function applyThemeFromStorage() {
+  const theme = localStorage.getItem('prawnfeeds-theme') || 'system';
+  let actualTheme = theme;
+  if (theme === 'system') {
+    actualTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', actualTheme);
+
+  // Update desktop theme buttons
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.theme === theme);
+  });
 }
 
 /**
@@ -380,45 +504,45 @@ function handleTabClick(section) {
 function setupThemeToggle() {
   const STORAGE_KEY = 'prawnfeeds-theme';
   const DEFAULT_THEME = 'system';
-  
+
   function getSystemTheme() {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   }
-  
+
   function getSavedTheme() {
     return localStorage.getItem(STORAGE_KEY) || DEFAULT_THEME;
   }
-  
+
   function applyTheme(theme) {
     let actualTheme = theme;
     if (theme === 'system') {
       actualTheme = getSystemTheme();
     }
     document.documentElement.setAttribute('data-theme', actualTheme);
-    
+
     // Update active button
     document.querySelectorAll('.theme-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.theme === theme);
     });
   }
-  
+
   function setTheme(theme) {
     localStorage.setItem(STORAGE_KEY, theme);
     applyTheme(theme);
   }
-  
+
   // Apply theme immediately
   applyTheme(getSavedTheme());
-  
+
   // Add click handlers
   document.querySelectorAll('.theme-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', function () {
       setTheme(this.dataset.theme);
     });
   });
-  
+
   // Listen for system theme changes
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function() {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
     if (getSavedTheme() === 'system') {
       applyTheme('system');
     }
@@ -431,29 +555,29 @@ function setupThemeToggle() {
 function setupTouchNavigation() {
   const wrapper = document.getElementById('sections-wrapper');
   const container = document.querySelector('.sections-container');
-  
+
   container.addEventListener('touchstart', (e) => {
     touchStartX = e.touches[0].clientX;
     touchStartY = e.touches[0].clientY;
     isSwiping = false;
   }, { passive: true });
-  
+
   container.addEventListener('touchmove', (e) => {
     if (!touchStartX) return;
-    
+
     touchCurrentX = e.touches[0].clientX;
     const touchCurrentY = e.touches[0].clientY;
-    
+
     const diffX = touchCurrentX - touchStartX;
     const diffY = touchCurrentY - touchStartY;
-    
+
     // Detect horizontal swipe (more horizontal than vertical)
     if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
       isSwiping = true;
       container.classList.add('swiping');
     }
   }, { passive: true });
-  
+
   container.addEventListener('touchend', (e) => {
     if (!isSwiping) {
       touchStartX = 0;
@@ -461,10 +585,10 @@ function setupTouchNavigation() {
       container.classList.remove('swiping');
       return;
     }
-    
+
     const diffX = touchCurrentX - touchStartX;
     const threshold = 50; // Minimum swipe distance
-    
+
     if (Math.abs(diffX) > threshold) {
       if (diffX > 0) {
         // Swipe right - previous section
@@ -474,7 +598,7 @@ function setupTouchNavigation() {
         navigateToNextSection();
       }
     }
-    
+
     touchStartX = 0;
     touchStartY = 0;
     touchCurrentX = 0;
@@ -492,7 +616,7 @@ function setupKeyboardNavigation() {
     if (document.getElementById('modal-overlay').classList.contains('active')) {
       return;
     }
-    
+
     if (e.key === 'ArrowLeft') {
       e.preventDefault();
       navigateToPreviousSection();
@@ -509,7 +633,7 @@ function setupKeyboardNavigation() {
 function navigateToPreviousSection() {
   const sections = ['youtube', 'blogs', 'security', 'subreddits', 'twitch'];
   const currentIndex = sections.indexOf(currentSection);
-  
+
   if (currentIndex > 0) {
     switchSection(sections[currentIndex - 1]);
   }
@@ -521,7 +645,7 @@ function navigateToPreviousSection() {
 function navigateToNextSection() {
   const sections = ['youtube', 'blogs', 'security', 'subreddits', 'twitch'];
   const currentIndex = sections.indexOf(currentSection);
-  
+
   if (currentIndex < sections.length - 1) {
     switchSection(sections[currentIndex + 1]);
   }
@@ -536,7 +660,7 @@ function switchSection(sectionName) {
   if (currentSectionEl) {
     sectionScrollPositions[currentSection] = window.scrollY;
   }
-  
+
   // Update active states and ARIA attributes
   document.querySelectorAll('.section').forEach(s => {
     s.classList.remove('active');
@@ -546,28 +670,28 @@ function switchSection(sectionName) {
     t.classList.remove('active');
     t.setAttribute('aria-selected', 'false');
   });
-  
+
   const newSection = document.getElementById(`${sectionName}-section`);
   const newTab = document.querySelector(`.header-tab[data-section="${sectionName}"]`);
-  
+
   if (newSection && newTab) {
     newSection.classList.add('active');
     newSection.setAttribute('aria-hidden', 'false');
     newTab.classList.add('active');
     newTab.setAttribute('aria-selected', 'true');
     currentSection = sectionName;
-    
+
     // Render section in its saved view mode
     renderSectionView(sectionName);
     updateTabIndicator(sectionName);
-    
+
     // Restore scroll position
     setTimeout(() => {
       const savedPosition = sectionScrollPositions[sectionName] || 0;
       window.scrollTo(0, savedPosition);
     }, 50);
   }
-  
+
   // Filter offline feeds by current section
   filterOfflineFeeds(sectionName);
 }
@@ -578,7 +702,7 @@ function switchSection(sectionName) {
 function updateTabIndicator(section) {
   const tab = document.querySelector(`.header-tab[data-section="${section}"]`);
   if (!tab) return;
-  
+
   const viewMode = sectionViewState[section];
   if (viewMode === 'timeline') {
     tab.classList.add('timeline-view');
@@ -593,9 +717,9 @@ function updateTabIndicator(section) {
 function renderSectionView(section) {
   const grid = document.getElementById(`${section}-grid`);
   if (!grid) return;
-  
+
   const viewMode = sectionViewState[section];
-  
+
   if (viewMode === 'timeline') {
     renderTimelineView(section, grid);
   } else {
@@ -613,22 +737,22 @@ function renderTimelineView(section, grid) {
     grid.innerHTML = '<div class="timeline-empty"><div class="timeline-empty-icon">📭</div><h3>No feeds available</h3><p>Check back later for updates</p></div>';
     return;
   }
-  
+
   // Get timeline articles (last 30 days, sorted chronologically)
   const articles = getTimelineArticles(feeds);
-  
+
   if (articles.length === 0) {
     grid.innerHTML = '<div class="timeline-empty"><div class="timeline-empty-icon">📭</div><h3>No recent articles</h3><p>No articles from the last 30 days</p></div>';
     return;
   }
-  
+
   // Render timeline list
   const timelineHTML = `
     <div class="timeline-container">
       <ul class="timeline-list">
         ${articles.map(article => {
-          const recencyClass = getRecencyClass(article.pubDate);
-          return `
+    const recencyClass = getRecencyClass(article.pubDate);
+    return `
             <li class="timeline-item ${recencyClass}">
               <a href="${escapeHtml(article.link)}" class="timeline-item-link" target="_blank" rel="noopener noreferrer">
                 ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="" class="timeline-item-thumbnail" loading="lazy">` : ''}
@@ -641,11 +765,11 @@ function renderTimelineView(section, grid) {
               </a>
             </li>
           `;
-        }).join('')}
+  }).join('')}
       </ul>
     </div>
   `;
-  
+
   grid.innerHTML = timelineHTML;
 }
 
@@ -655,24 +779,24 @@ function renderTimelineView(section, grid) {
 function renderCardView(section, grid) {
   // Restore original card view by re-showing all feed cards
   const cards = Array.from(grid.querySelectorAll('.feed-card'));
-  
+
   if (cards.length === 0) {
     // No cards exist, need to recreate them
     grid.innerHTML = '';
     const feeds = getSectionFeeds(section);
     if (!feeds) return;
-    
+
     feeds.forEach(feed => {
       const card = createFeedCard(feed.name, section);
       grid.appendChild(card);
-      
+
       // Fetch and populate card data
       const cachedData = feedDataCache.get(feed.name);
       if (cachedData) {
         updateFeedCard(card, cachedData, feed.limit);
       }
     });
-    
+
     // Sort cards by recency
     sortFeedsByRecencyInGrid(grid);
   } else {
@@ -688,7 +812,7 @@ function renderCardView(section, grid) {
  */
 function getSectionFeeds(section) {
   if (!window.FEEDS) return null;
-  
+
   const sectionMap = {
     'youtube': window.FEEDS.youtube,
     'blogs': window.FEEDS.blogs,
@@ -696,7 +820,7 @@ function getSectionFeeds(section) {
     'subreddits': window.FEEDS.subreddits,
     'twitch': window.FEEDS.twitch
   };
-  
+
   return sectionMap[section];
 }
 
@@ -706,9 +830,9 @@ function getSectionFeeds(section) {
 function getTimelineArticles(feeds) {
   const oneMonthAgo = new Date();
   oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-  
+
   const allArticles = [];
-  
+
   feeds.forEach(feed => {
     const cachedData = feedDataCache.get(feed.name);
     if (cachedData && cachedData.items) {
@@ -721,7 +845,7 @@ function getTimelineArticles(feeds) {
       });
     }
   });
-  
+
   // Filter to last 30 days and sort by date (newest first)
   return allArticles
     .filter(article => {
@@ -737,24 +861,24 @@ function getTimelineArticles(feeds) {
 function setupModal() {
   const overlay = document.getElementById('modal-overlay');
   const closeBtn = document.getElementById('modal-close');
-  
+
   // Close on button click
   closeBtn.addEventListener('click', closeModal);
-  
+
   // Close on overlay click (outside modal)
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) {
       closeModal();
     }
   });
-  
+
   // Close on ESC key
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && overlay.classList.contains('active')) {
       closeModal();
     }
   });
-  
+
   // Setup infinite scroll
   const modalBody = document.getElementById('modal-body');
   modalBody.addEventListener('scroll', handleModalScroll);
@@ -772,38 +896,38 @@ function openModal(feedName, feedData) {
   const overlay = document.getElementById('modal-overlay');
   const title = document.getElementById('modal-title');
   const body = document.getElementById('modal-body');
-  
+
   // Find feed name in cache
-  const cacheKey = Object.keys(window.FEEDS).find(category => 
+  const cacheKey = Object.keys(window.FEEDS).find(category =>
     window.FEEDS[category].some(f => f.name.toLowerCase() === feedName.toLowerCase())
   );
-  
+
   if (cacheKey) {
     const feed = window.FEEDS[cacheKey].find(f => f.name.toLowerCase() === feedName.toLowerCase());
     title.textContent = feed.name;
   } else {
     title.textContent = feedName;
   }
-  
+
   // Reset modal state
   modalLoadOffset = 15; // Show 15 total: skip 3 shown in card, display next 12 in modal
   modalItems = feedData.items;
   modalTotalItems = feedData.items.length;
   modalIsLoading = false;
-  
+
   // Load initial items (skip first 3 that are already shown in card, show up to 15 total)
   const initialItems = modalItems.slice(3, modalLoadOffset);
-  body.innerHTML = '<ul class="feed-items">' + 
+  body.innerHTML = '<ul class="feed-items">' +
     initialItems.map((item, index) => {
       const recencyClass = getRecencyClass(item.pubDate);
       return `<li class="feed-item ${recencyClass}" data-index="${index + 3}">${createFeedItemHTML(item, index + 3)}</li>`;
     }).join('') +
     '</ul>';
-  
+
   // Show modal
   overlay.classList.add('active');
   document.body.classList.add('modal-open');
-  
+
   // Reset scroll position
   body.scrollTop = 0;
 }
@@ -823,15 +947,15 @@ function closeModal() {
 function handleModalScroll() {
   const body = document.getElementById('modal-body');
   const loading = document.getElementById('modal-loading');
-  
+
   // Check if near bottom (within 200px)
   const nearBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 200;
-  
+
   if (nearBottom && !modalIsLoading && modalLoadOffset < modalTotalItems) {
     modalIsLoading = true;
     loading.style.display = 'block';
     loading.setAttribute('aria-busy', 'true');
-    
+
     // Simulate loading delay (can be adjusted)
     setTimeout(() => {
       loadMoreModalItems();
@@ -848,10 +972,10 @@ function handleModalScroll() {
 function loadMoreModalItems() {
   const body = document.getElementById('modal-body');
   const ul = body.querySelector('.feed-items');
-  
+
   const nextOffset = Math.min(modalLoadOffset + MODAL_LOAD_INCREMENT, modalTotalItems);
   const newItems = modalItems.slice(modalLoadOffset, nextOffset);
-  
+
   newItems.forEach((item, index) => {
     const li = document.createElement('li');
     const recencyClass = getRecencyClass(item.pubDate);
@@ -860,7 +984,7 @@ function loadMoreModalItems() {
     li.innerHTML = createFeedItemHTML(item, modalLoadOffset + index);
     ul.appendChild(li);
   });
-  
+
   modalLoadOffset = nextOffset;
 }
 
@@ -886,7 +1010,7 @@ function createFeedItemHTML(item, index) {
 function filterOfflineFeeds(sectionName) {
   const offlineGrid = document.getElementById('offline-grid');
   if (!offlineGrid) return;
-  
+
   // Map section names to categories
   const sectionCategories = {
     'youtube': ['youtube'],
@@ -895,24 +1019,24 @@ function filterOfflineFeeds(sectionName) {
     'subreddits': ['subreddits'],
     'twitch': ['twitch']
   };
-  
+
   const relevantCategories = sectionCategories[sectionName] || [];
-  
+
   // Filter and display only relevant offline feeds
-  const relevantFeeds = failedFeeds.filter(feed => 
+  const relevantFeeds = failedFeeds.filter(feed =>
     relevantCategories.includes(feed.category)
   );
-  
+
   const offlineSection = document.getElementById('offline-section');
   const offlineCount = document.getElementById('offline-count');
-  
+
   if (relevantFeeds.length === 0) {
     offlineSection.style.display = 'none';
     return;
   }
-  
+
   offlineCount.textContent = relevantFeeds.length;
-  
+
   offlineGrid.innerHTML = relevantFeeds.map(feed => `
     <div class="feed-card error offline-card">
       <div class="feed-card-header">
@@ -926,7 +1050,7 @@ function filterOfflineFeeds(sectionName) {
       </ul>
     </div>
   `).join('');
-  
+
   offlineSection.style.display = 'block';
 }
 
@@ -938,7 +1062,7 @@ function formatRelativeTime(dateStr) {
   try {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return dateStr;
-    
+
     const now = new Date();
     const diffMs = now - date;
     const diffSecs = Math.floor(diffMs / 1000);
@@ -946,13 +1070,13 @@ function formatRelativeTime(dateStr) {
     const diffHours = Math.floor(diffMins / 60);
     const diffDays = Math.floor(diffHours / 24);
     const diffWeeks = Math.floor(diffDays / 7);
-    
+
     if (diffSecs < 60) return 'just now';
     if (diffMins < 60) return `${diffMins}m ago`;
     if (diffHours < 24) return `${diffHours}h ago`;
     if (diffDays < 7) return `${diffDays}d ago`;
     if (diffWeeks < 4) return `${diffWeeks}w ago`;
-    
+
     return date.toLocaleDateString();
   } catch {
     return dateStr;
@@ -960,11 +1084,13 @@ function formatRelativeTime(dateStr) {
 }
 
 /**
- * Truncate text to max length
+ * Truncate text to max words (default 10 words for subtitles)
  */
-function truncateText(text, maxLength = 150) {
-  if (!text || text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + '...';
+function truncateText(text, maxWords = 10) {
+  if (!text) return text;
+  const words = text.trim().split(/\s+/);
+  if (words.length <= maxWords) return text;
+  return words.slice(0, maxWords).join(' ') + '...';
 }
 
 /**
@@ -981,15 +1107,15 @@ function escapeHtml(text) {
  */
 function getRecencyClass(dateStr) {
   if (!dateStr) return 'recency-old';
-  
+
   try {
     const date = new Date(dateStr);
     if (isNaN(date.getTime())) return 'recency-old';
-    
+
     const now = new Date();
     const diffMs = now - date;
     const diffDays = Math.floor(diffMs / MS_PER_DAY);
-    
+
     if (diffDays === 0) return 'recency-today';
     if (diffDays <= 7) return 'recency-week';
     if (diffDays <= 30) return 'recency-month';
@@ -1004,7 +1130,7 @@ function getRecencyClass(dateStr) {
  */
 function sortFeedsByRecency() {
   const sections = ['youtube', 'blogs', 'security', 'subreddits', 'twitch'];
-  
+
   sections.forEach(section => {
     const grid = document.getElementById(`${section}-grid`);
     if (!grid) return;
@@ -1018,16 +1144,16 @@ function sortFeedsByRecency() {
 function sortFeedsByRecencyInGrid(grid) {
   // Get all feed cards in this grid (excluding error cards)
   const cards = Array.from(grid.querySelectorAll('.feed-card:not(.error)'));
-  
+
   // Sort by latest date (most recent first)
   cards.sort((a, b) => {
     const dateA = a.dataset.latestDate ? new Date(a.dataset.latestDate).getTime() : 0;
     const dateB = b.dataset.latestDate ? new Date(b.dataset.latestDate).getTime() : 0;
-    
+
     // Handle NaN values (invalid dates) by treating them as 0
     return (isNaN(dateB) ? 0 : dateB) - (isNaN(dateA) ? 0 : dateA);
   });
-  
+
   // Re-append cards in sorted order
   cards.forEach(card => {
     grid.appendChild(card);

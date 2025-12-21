@@ -24,12 +24,18 @@
             <path d="M4 4a16 16 0 0 1 16 16"></path>
             <circle cx="5" cy="19" r="1"></circle>
           </svg>
-          <h1>Prawn Feeds</h1>
+          <h1 class="desktop-title">Prawn Feeds</h1>
         </div>
+        <!-- Hamburger Menu (Mobile Only) -->
+        <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
       </div>
       <div class="header-center">
-        <!-- Tab navigation moved to center -->
-        <div class="header-tabs">
+        <!-- Tab navigation (Desktop) -->
+        <div class="header-tabs desktop-tabs">
           <button class="header-tab active" data-section="youtube">YouTube</button>
           <button class="header-tab" data-section="blogs">Blogs</button>
           <button class="header-tab" data-section="security">Security</button>
@@ -38,12 +44,31 @@
         </div>
       </div>
       <div class="header-right">
-        <div class="theme-toggle">
+        <!-- Theme toggle (Desktop) -->
+        <div class="theme-toggle desktop-theme">
           <button class="theme-btn" data-theme="light" title="Light theme" aria-label="Light theme">☀️</button>
           <button class="theme-btn" data-theme="dark" title="Dark theme" aria-label="Dark theme">🌙</button>
           <button class="theme-btn active" data-theme="system" title="System theme" aria-label="System theme">💻</button>
         </div>
+        <!-- Theme button (Mobile) -->
+        <button class="mobile-theme-btn" id="mobile-theme-btn" aria-label="Toggle theme menu" aria-expanded="false">
+          <span class="theme-icon">🎨</span>
+        </button>
       </div>
+    </div>
+    <!-- Mobile Navigation Dropdown -->
+    <div class="mobile-nav-dropdown" id="mobile-nav-dropdown" aria-hidden="true">
+      <button class="mobile-nav-item active" data-section="youtube">📺 YouTube</button>
+      <button class="mobile-nav-item" data-section="blogs">📝 Blogs</button>
+      <button class="mobile-nav-item" data-section="security">🔒 Security</button>
+      <button class="mobile-nav-item" data-section="subreddits">🔗 Subreddits</button>
+      <button class="mobile-nav-item" data-section="twitch">🎮 Twitch</button>
+    </div>
+    <!-- Mobile Theme Dropdown -->
+    <div class="mobile-theme-dropdown" id="mobile-theme-dropdown" aria-hidden="true">
+      <button class="mobile-theme-option" data-theme="light">☀️ Light</button>
+      <button class="mobile-theme-option" data-theme="dark">🌙 Dark</button>
+      <button class="mobile-theme-option active" data-theme="system">💻 System</button>
     </div>
   </header>
 
