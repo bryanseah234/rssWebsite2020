@@ -484,7 +484,20 @@ body {
   display: grid;
   grid-template-columns: 1fr;
   gap: 16px;
+  gap: 16px;
   margin-bottom: 40px;
+}
+
+/* Timeline Mode Modifier for Grid */
+.feed-grid.timeline-mode {
+  display: block;
+  /* Override grid layout */
+  width: 100%;
+}
+
+.feed-grid.timeline-mode .feed-card {
+  display: none;
+  /* Ensure remnants are hidden */
 }
 
 /* Feed Card */
