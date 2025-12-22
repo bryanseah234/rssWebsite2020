@@ -119,7 +119,8 @@ body {
 }
 
 .header-content {
-  max-width: 1400px;
+  width: 100%;
+  padding: 0 20px;
   margin: 0 auto;
   display: flex;
   justify-content: space-between;
@@ -438,7 +439,7 @@ body {
 
 /* Main Container */
 .main-container {
-  max-width: 1400px;
+  width: 100%;
   margin: 0 auto;
   padding: 24px 20px;
 }
@@ -471,8 +472,9 @@ body {
 }
 
 /* Section Content - Centered */
+/* Section Content - Full Width */
 .section-content {
-  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
   padding: 20px;
 }
