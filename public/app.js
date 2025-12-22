@@ -120,6 +120,15 @@ async function setupSections() {
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
 
+  // Hide global loader when done
+  const loader = document.getElementById('global-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 300); // Wait for transition
+  }
+
   // Sort feeds by recency within each section
   sortFeedsByRecency();
 
@@ -804,6 +813,9 @@ function renderTimelineView(section, grid) {
     return;
   }
 
+  // FORCE FULL WIDTH: Add class to grid container to override 2-column layout
+  grid.classList.add('timeline-mode');
+
   // Get timeline articles (last 30 days, sorted chronologically)
   const articles = getTimelineArticles(feeds);
 
@@ -908,6 +920,9 @@ function formatDayLabel(date, today, yesterday) {
  */
 function renderCardView(section, grid) {
   // Restore original card view by re-showing all feed cards
+  // Remove timeline mode class to restore standard grid layout
+  grid.classList.remove('timeline-mode');
+
   // Clear grid to rebuild (simplest way to ensure correct order and state)
   grid.innerHTML = '';
 
