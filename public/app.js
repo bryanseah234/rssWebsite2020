@@ -1224,11 +1224,25 @@ function truncateText(text, maxWords = 10) {
 }
 
 /**
- * Escape HTML to prevent XSS
+ * Decode HTML entities from RSS feeds (e.g., &amp; -> &)
+ */
+function decodeHtmlEntities(text) {
+  if (!text) return text;
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = text;
+  return textarea.value;
+}
+
+/**
+ * Escape HTML to prevent XSS (also decodes RSS entities first)
  */
 function escapeHtml(text) {
+  if (!text) return '';
+  // First decode any HTML entities from the RSS feed
+  const decoded = decodeHtmlEntities(text);
+  // Then safely escape for display
   const div = document.createElement('div');
-  div.textContent = text;
+  div.textContent = decoded;
   return div.innerHTML;
 }
 

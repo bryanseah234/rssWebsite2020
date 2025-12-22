@@ -470,6 +470,13 @@ body {
   letter-spacing: 0.05em;
 }
 
+/* Section Content - Centered */
+.section-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
 /* Feed Grid */
 .feed-grid {
   display: grid;
