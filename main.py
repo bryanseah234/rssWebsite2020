@@ -13,10 +13,10 @@ app = Flask(__name__, template_folder='templates')
 app.config['DEBUG'] = True
 
 # Parallel fetching configuration
-PARALLEL_TIMEOUT = 8  # Overall timeout for parallel operations in seconds
+PARALLEL_TIMEOUT = 10  # Overall timeout for parallel operations in seconds
 RSS_MAX_WORKERS = 15  # Max concurrent RSS feed fetches
 REDDIT_MAX_WORKERS = 6  # Max concurrent Reddit fetches
-YOUTUBE_MAX_WORKERS = 6  # Max concurrent YouTube fetches
+YOUTUBE_MAX_WORKERS = 10  # Max concurrent YouTube fetches
 TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
 
 # Feed fetching configuration

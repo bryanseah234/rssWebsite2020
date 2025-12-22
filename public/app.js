@@ -123,12 +123,7 @@ async function setupSections() {
   // Sort feeds by recency within each section
   sortFeedsByRecency();
 
-  // Move failed/empty feed cards to offline section by hiding them from main grid
-  document.querySelectorAll('.feed-card.error').forEach(card => {
-    card.style.display = 'none';
-  });
-
-  // Display offline feeds section if any
+  // Display offline feeds section if any (initial check)
   if (failedFeeds.length > 0) {
     displayOfflineFeeds();
   }
@@ -308,6 +303,13 @@ function updateFeedCard(card, data, initialLimit = 3) {
       error: 'No items available'
     });
 
+    // Treat as offline feed - hide immediately from main grid
+    card.classList.add('error');
+    card.style.display = 'none'; // Immediate hide
+
+    // Update offline section immediately
+    displayOfflineFeeds();
+
     return;
   }
 
@@ -388,6 +390,12 @@ function showFeedError(card, error, feed) {
   });
 
   console.error(`[Feed Error] ${card.dataset.name}:`, error);
+
+  // Immediate hide from main grid
+  card.style.display = 'none';
+
+  // Update offline section immediately
+  displayOfflineFeeds();
 }
 
 /**
