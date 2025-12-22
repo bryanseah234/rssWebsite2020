@@ -120,6 +120,15 @@ async function setupSections() {
   // Fetch all feeds with concurrency limit
   await fetchFeedsWithConcurrency(feedConfigs, CONCURRENCY_LIMIT);
 
+  // Hide global loader when done
+  const loader = document.getElementById('global-loader');
+  if (loader) {
+    loader.style.opacity = '0';
+    setTimeout(() => {
+      loader.style.display = 'none';
+    }, 300); // Wait for transition
+  }
+
   // Sort feeds by recency within each section
   sortFeedsByRecency();
 
