@@ -135,7 +135,7 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
                 headers['If-Modified-Since'] = cached['last_modified']
 
         response = requests.get(url, headers=headers, timeout=10)
-        
+
         # Handle 304 Not Modified
         if response.status_code == 304 and cached:
             log(f"Hit existing cache for {url} (304)")
@@ -194,10 +194,10 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
             site_url = feed.feed.link
 
         result = {
-            'items': items, 
-            'error': False, 
-            'error_msg': '', 
-            'total_count': len(items), 
+            'items': items,
+            'error': False,
+            'error_msg': '',
+            'total_count': len(items),
             'site_url': site_url
         }
 
