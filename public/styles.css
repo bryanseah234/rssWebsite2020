@@ -1235,56 +1235,44 @@ body.modal-open {
 }
 
 /* Horizontal scrollable articles row */
+/* Multi-row grid layout for articles */
 .timeline-day-articles {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
   padding: 16px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  /* Firefox */
-  /* Firefox */
-  scrollbar-color: var(--text-muted) var(--bg-secondary);
-  /* Firefox */
-  padding-bottom: 8px;
-  /* Ensure space for scrollbar */
 }
 
-/* Hide scrollbar but keep functionality */
-.timeline-day-articles::-webkit-scrollbar {
-  height: 10px;
+/* Responsive grid adjustments */
+@media (max-width: 1200px) {
+  .timeline-day-articles {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
-.timeline-day-articles::-webkit-scrollbar-track {
-  background: var(--bg-secondary);
-  border-radius: 5px;
+@media (max-width: 900px) {
+  .timeline-day-articles {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
-.timeline-day-articles::-webkit-scrollbar-thumb {
-  background: var(--text-muted);
-  border-radius: 5px;
-  border: 2px solid var(--bg-secondary);
-}
-
-.timeline-day-articles::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+@media (max-width: 600px) {
+  .timeline-day-articles {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Timeline Item (Compact Card) */
 .timeline-item {
-  flex: 0 0 280px;
-  min-width: 280px;
-  max-width: 280px;
+  width: 100%;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   transition: box-shadow var(--transition-fast), transform var(--transition-fast);
-  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
 }
 
 .timeline-item:hover {

@@ -4,7 +4,7 @@
  */
 
 // Constants
-const CONCURRENCY_LIMIT = 6;
+const CONCURRENCY_LIMIT = 3;
 const API_ENDPOINT = '/api/rss';
 const EXTENDED_FETCH_LIMIT = 50; // Increased to support infinite scroll in modal
 const MODAL_LOAD_INCREMENT = 10;

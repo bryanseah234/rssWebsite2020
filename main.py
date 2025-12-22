@@ -7,7 +7,14 @@ import os
 import sys
 import traceback
 
-app = Flask(__name__, template_folder='templates')
+import time
+import random
+
+app = Flask(__name__, static_folder='public', static_url_path='')
+
+# Simple in-memory cache for conditional GETs
+# Format: { url: { 'etag': '...', 'last_modified': '...', 'data': {...} } }
+FEED_CACHE = {}
 
 # Enable debug logging
 app.config['DEBUG'] = True
@@ -105,6 +112,9 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
         return {'items': [], 'error': True, 'error_msg': 'Unsafe URL', 'total_count': 0}
 
     try:
+        # Add random jitter to prevent thundering herd
+        time.sleep(random.uniform(0.5, 1.5))
+
         log(f"Fetching RSS feed: {url}")
         import feedparser
         import requests
@@ -112,10 +122,25 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
         from dateutil import parser as date_parser
 
         headers = {
-            'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
+            'User-Agent': 'Mozilla/5.0 (compatible; PrawnFeeds/1.0; +http://localhost:3000)',
             'Accept': 'application/rss+xml, application/xml, text/xml'
         }
+
+        # Check cache for conditional headers
+        cached = FEED_CACHE.get(url)
+        if cached:
+            if cached.get('etag'):
+                headers['If-None-Match'] = cached['etag']
+            if cached.get('last_modified'):
+                headers['If-Modified-Since'] = cached['last_modified']
+
         response = requests.get(url, headers=headers, timeout=10)
+        
+        # Handle 304 Not Modified
+        if response.status_code == 304 and cached:
+            log(f"Hit existing cache for {url} (304)")
+            return cached['data']
+
         response.raise_for_status()
         log(f"RSS fetch successful: {url} (status: {response.status_code})")
 
@@ -165,12 +190,26 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
                 'thumbnail': thumbnail
             })
 
-        site_url = ''
         if hasattr(feed, 'feed') and hasattr(feed.feed, 'link'):
             site_url = feed.feed.link
 
+        result = {
+            'items': items, 
+            'error': False, 
+            'error_msg': '', 
+            'total_count': len(items), 
+            'site_url': site_url
+        }
+
+        # Update cache
+        FEED_CACHE[url] = {
+            'etag': response.headers.get('ETag'),
+            'last_modified': response.headers.get('Last-Modified'),
+            'data': result
+        }
+
         log(f"Returning {len(items)} items from {url}")
-        return {'items': items, 'error': False, 'error_msg': '', 'total_count': len(items), 'site_url': site_url}
+        return result
     except Exception as e:
         error_msg = str(e)
         log(f"ERROR fetching {url}: {error_msg}")
