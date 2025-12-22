@@ -908,33 +908,33 @@ function formatDayLabel(date, today, yesterday) {
  */
 function renderCardView(section, grid) {
   // Restore original card view by re-showing all feed cards
-  const cards = Array.from(grid.querySelectorAll('.feed-card'));
+  // Clear grid to rebuild (simplest way to ensure correct order and state)
+  grid.innerHTML = '';
 
-  if (cards.length === 0) {
-    // No cards exist, need to recreate them
-    grid.innerHTML = '';
-    const feeds = getSectionFeeds(section);
-    if (!feeds) return;
+  const feeds = getSectionFeeds(section);
+  if (!feeds) return;
 
-    feeds.forEach(feed => {
-      const card = createFeedCard(feed.name, section);
-      grid.appendChild(card);
+  feeds.forEach(feed => {
+    // Check if this feed has failed
+    const isFailed = failedFeeds.some(f => f.name === feed.name);
+    if (isFailed) {
+      // Do not render in main grid, it belongs in offline section
+      return;
+    }
 
-      // Fetch and populate card data
-      const cachedData = feedDataCache.get(feed.name);
-      if (cachedData) {
-        updateFeedCard(card, cachedData, feed.limit);
-      }
-    });
+    // Create card
+    const card = createFeedCard(feed.name, section, feed.url);
+    grid.appendChild(card);
 
-    // Sort cards by recency
-    sortFeedsByRecencyInGrid(grid);
-  } else {
-    // Cards already exist, just make sure they're visible
-    cards.forEach(card => {
-      card.style.display = '';
-    });
-  }
+    // Populate with cached data if available
+    const cachedData = feedDataCache.get(feed.name);
+    if (cachedData) {
+      updateFeedCard(card, cachedData, feed.limit);
+    }
+  });
+
+  // Sort cards by recency
+  sortFeedsByRecencyInGrid(grid);
 }
 
 /**
@@ -1303,7 +1303,8 @@ function getSiteUrl(name, category, feedUrl) {
 
   if (category === 'youtube') {
     // Extract channel ID from feed URL: ...?channel_id=UC...
-    const match = feedUrl && feedUrl.match(/channel_id=([^&]+)/);
+    // Handle case where channel_id might be the last param or followed by others
+    const match = feedUrl && feedUrl.match(/[?&]channel_id=([^&]+)/);
     if (match && match[1]) {
       siteUrl = `https://www.youtube.com/channel/${match[1]}`;
     }
