@@ -115,7 +115,7 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
             'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
             'Accept': 'application/rss+xml, application/xml, text/xml'
         }
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         log(f"RSS fetch successful: {url} (status: {response.status_code})")
 
@@ -165,8 +165,12 @@ def fetch_rss_feed(url, limit=5, enable_load_more=True):
                 'thumbnail': thumbnail
             })
 
+        site_url = ''
+        if hasattr(feed, 'feed') and hasattr(feed.feed, 'link'):
+            site_url = feed.feed.link
+
         log(f"Returning {len(items)} items from {url}")
-        return {'items': items, 'error': False, 'error_msg': '', 'total_count': len(items)}
+        return {'items': items, 'error': False, 'error_msg': '', 'total_count': len(items), 'site_url': site_url}
     except Exception as e:
         error_msg = str(e)
         log(f"ERROR fetching {url}: {error_msg}")
@@ -347,7 +351,7 @@ def fetch_youtube(channel_id, channel_name, limit=3):
             'User-Agent': 'Mozilla/5.0 (compatible; RSS Reader/1.0)',
             'Accept': 'application/xml, text/xml'
         }
-        response = requests.get(url, headers=headers, timeout=5)
+        response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
         log(f"YouTube fetch successful: {channel_name}")
 

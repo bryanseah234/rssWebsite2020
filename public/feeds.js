@@ -47,7 +47,6 @@ const FEEDS = {
     { name: 'Nicole Low', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCIypvWnouvlctb50RdcgVjQ', limit: 3 },
     { name: 'Chee Aun Lim', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC0Lf3ogeJG1P7BuZB--Fltg', limit: 3 },
     { name: 'vlogger vic', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCJW6Qhon6dycfi8yV7fDRag', limit: 3 },
-    { name: 'Rosie Ching', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC3hQPXGxwr1xyayVFsDQrTg', limit: 3 },
     { name: 'Tho Yow Kin', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC_ASrI3lDMLTnaEOnrrthPw', limit: 3 },
     { name: 'jellybunniii', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UC5cbvPOVa0hERXeEKUZiPuQ', limit: 3 },
     { name: 'Mark Lim', url: 'https://www.youtube.com/feeds/videos.xml?channel_id=UCCGHLup0bJ4ag5ZfH23ZNEQ', limit: 3 },

@@ -146,7 +146,9 @@ function createFeedCard(name, category, url = '') {
   card.innerHTML = `
     <div class="feed-card-header">
       <div class="feed-card-header-left">
-        <span class="feed-card-title">${escapeHtml(name)}</span>
+        <a href="#" class="feed-card-title-link" target="_blank" rel="noopener noreferrer">
+          <span class="feed-card-title">${escapeHtml(name)}</span>
+        </a>
         <span class="feed-card-count">...</span>
       </div>
     </div>
@@ -244,6 +246,42 @@ function updateFeedCard(card, data, initialLimit = 3) {
   card.classList.remove('loading');
 
   const headerEl = card.querySelector('.feed-card-header');
+  const category = card.dataset.category;
+
+  // Update title link based on category
+  const titleLink = card.querySelector('.feed-card-title-link');
+  if (titleLink) {
+    let siteUrl = '#';
+    const feedUrl = card.dataset.url || '';
+
+    if (category === 'youtube') {
+      // Extract channel ID from feed URL: ...?channel_id=UC...
+      const match = feedUrl.match(/channel_id=([^&]+)/);
+      if (match && match[1]) {
+        siteUrl = `https://www.youtube.com/channel/${match[1]}`;
+      }
+    } else if (category === 'subreddits') {
+      // Name is "r/subreddit"
+      const subName = card.dataset.name.replace(/^r\//i, '');
+      siteUrl = `https://www.reddit.com/r/${subName}`;
+    } else if (category === 'twitch') {
+      // Name is username
+      siteUrl = `https://www.twitch.tv/${card.dataset.name}`;
+    } else if (category === 'blogs' || category === 'security') {
+      // Use site_url from backend if available, otherwise trying to infer it is hard
+      // We will rely on what main.py returns being correct for the homepage
+      if (data.site_url) {
+        siteUrl = data.site_url;
+      } else {
+        // Fallback: mostly the feed URL isn't the site URL, but it's something
+        siteUrl = feedUrl;
+      }
+    }
+
+    titleLink.href = siteUrl;
+  }
+
+  // Update count
   const countEl = card.querySelector('.feed-card-count');
   const itemsEl = card.querySelector('.feed-items');
 
