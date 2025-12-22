@@ -415,8 +415,10 @@ body {
   }
 
   .header-content {
-    flex-direction: row;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
     gap: 12px;
+    align-items: center;
   }
 
   .header-left {
