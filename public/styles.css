@@ -1236,22 +1236,27 @@ body.modal-open {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   /* Firefox */
-  scrollbar-color: var(--border-color) transparent;
   /* Firefox */
+  scrollbar-color: var(--text-muted) var(--bg-secondary);
+  /* Firefox */
+  padding-bottom: 8px;
+  /* Ensure space for scrollbar */
 }
 
 /* Hide scrollbar but keep functionality */
 .timeline-day-articles::-webkit-scrollbar {
-  height: 6px;
+  height: 10px;
 }
 
 .timeline-day-articles::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-secondary);
+  border-radius: 5px;
 }
 
 .timeline-day-articles::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
+  background: var(--text-muted);
+  border-radius: 5px;
+  border: 2px solid var(--bg-secondary);
 }
 
 .timeline-day-articles::-webkit-scrollbar-thumb:hover {
