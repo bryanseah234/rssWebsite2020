@@ -806,9 +806,8 @@ function renderTimelineView(section, grid) {
                     ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="" class="timeline-item-thumbnail" loading="lazy">` : ''}
                     <div class="timeline-item-content">
                       <div class="timeline-item-title">${escapeHtml(article.title)}</div>
-                      <div class="timeline-item-source">${escapeHtml(article.sourceName)}</div>
                       ${article.text ? `<div class="timeline-item-text">${escapeHtml(truncateText(article.text))}</div>` : ''}
-                      <div class="timeline-item-meta">${formatRelativeTime(article.pubDate)}</div>
+                      <div class="timeline-item-meta">${escapeHtml(article.sourceName)} · ${formatRelativeTime(article.pubDate)}</div>
                     </div>
                   </a>
                 </article>

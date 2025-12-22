@@ -1227,11 +1227,17 @@ body.modal-open {
 /* Horizontal scrollable articles row */
 .timeline-day-articles {
   display: flex;
+  flex-wrap: nowrap;
   gap: 12px;
   padding: 16px;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  /* Firefox */
+  scrollbar-color: var(--border-color) transparent;
+  /* Firefox */
 }
 
 /* Hide scrollbar but keep functionality */
@@ -1255,6 +1261,7 @@ body.modal-open {
 /* Timeline Item (Compact Card) */
 .timeline-item {
   flex: 0 0 280px;
+  min-width: 280px;
   max-width: 280px;
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -1311,11 +1318,7 @@ body.modal-open {
   color: var(--accent-link);
 }
 
-.timeline-item-source {
-  font-size: var(--font-size-sm);
-  color: var(--text-muted);
-  font-weight: 500;
-}
+
 
 .timeline-item-text {
   font-size: var(--font-size-sm);
@@ -1334,7 +1337,6 @@ body.modal-open {
 
 /* Timeline item recency colors - cascade to all text elements */
 .timeline-item.recency-today .timeline-item-title,
-.timeline-item.recency-today .timeline-item-source,
 .timeline-item.recency-today .timeline-item-text,
 .timeline-item.recency-today .timeline-item-meta {
   color: var(--recency-today);
@@ -1345,21 +1347,18 @@ body.modal-open {
 }
 
 .timeline-item.recency-week .timeline-item-title,
-.timeline-item.recency-week .timeline-item-source,
 .timeline-item.recency-week .timeline-item-text,
 .timeline-item.recency-week .timeline-item-meta {
   color: var(--recency-week);
 }
 
 .timeline-item.recency-month .timeline-item-title,
-.timeline-item.recency-month .timeline-item-source,
 .timeline-item.recency-month .timeline-item-text,
 .timeline-item.recency-month .timeline-item-meta {
   color: var(--recency-month);
 }
 
 .timeline-item.recency-old .timeline-item-title,
-.timeline-item.recency-old .timeline-item-source,
 .timeline-item.recency-old .timeline-item-text,
 .timeline-item.recency-old .timeline-item-meta {
   color: var(--recency-old);
