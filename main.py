@@ -20,7 +20,7 @@ YOUTUBE_MAX_WORKERS = 10  # Max concurrent YouTube fetches
 TWITCH_MAX_WORKERS = 5  # Max concurrent Twitch status checks
 
 # Feed fetching configuration
-MAX_FETCH_ITEMS = 50  # Maximum items to fetch per feed for load-more support
+MAX_FETCH_ITEMS = 25  # Maximum items to fetch per feed for load-more support
 
 
 def log(message):
