@@ -1,4 +1,4 @@
-# PrawnFeeds
+# The Prawn Feeds
 
 A modern, mobile-first RSS feed aggregator with swipeable navigation and advanced features.
 
