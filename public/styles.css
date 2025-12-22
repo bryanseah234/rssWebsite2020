@@ -419,10 +419,23 @@ body {
     flex-wrap: nowrap !important;
     gap: 12px;
     align-items: center;
+    position: relative !important;
+    /* For absolute centering */
   }
 
   .header-left {
-    flex: 1;
+    flex: 0 1 auto;
+    /* Allow shrink but stay left */
+    justify-content: flex-start;
+  }
+
+  /* Center the hamburger absolutely */
+  .hamburger-btn {
+    display: flex;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0 !important;
   }
 
   .header-center {
@@ -430,7 +443,8 @@ body {
   }
 
   .header-right {
-    flex: 0;
+    flex: 0 1 auto;
+    justify-content: flex-end;
   }
 
   .logo-icon {

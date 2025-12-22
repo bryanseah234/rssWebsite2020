@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,6 +15,7 @@
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="apple-touch-icon" href="/favicon.svg">
 </head>
+
 <body>
   <!-- Global Loading Screen -->
   <div id="global-loader">
@@ -28,20 +30,21 @@
     <div class="header-content">
       <div class="header-left">
         <div class="logo">
-          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 11a9 9 0 0 1 9 9"></path>
             <path d="M4 4a16 16 0 0 1 16 16"></path>
             <circle cx="5" cy="19" r="1"></circle>
           </svg>
           <h1 class="desktop-title">Prawn Feeds</h1>
         </div>
-        <!-- Hamburger Menu (Mobile Only) -->
-        <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">
-          <span class="hamburger-line"></span>
-          <span class="hamburger-line"></span>
-          <span class="hamburger-line"></span>
-        </button>
       </div>
+      <!-- Hamburger Menu (Mobile Only) - Centered -->
+      <button class="hamburger-btn" id="hamburger-btn" aria-label="Open menu" aria-expanded="false">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
       <div class="header-center">
         <!-- Tab navigation (Desktop) -->
         <div class="header-tabs desktop-tabs">
@@ -57,7 +60,8 @@
         <div class="theme-toggle desktop-theme">
           <button class="theme-btn" data-theme="light" title="Light theme" aria-label="Light theme">☀️</button>
           <button class="theme-btn" data-theme="dark" title="Dark theme" aria-label="Dark theme">🌙</button>
-          <button class="theme-btn active" data-theme="system" title="System theme" aria-label="System theme">💻</button>
+          <button class="theme-btn active" data-theme="system" title="System theme"
+            aria-label="System theme">💻</button>
         </div>
         <!-- Theme button (Mobile) -->
         <button class="mobile-theme-btn" id="mobile-theme-btn" aria-label="Toggle theme menu" aria-expanded="false">
@@ -87,35 +91,40 @@
   <main class="sections-container" role="main">
     <div class="sections-wrapper" id="sections-wrapper" aria-live="polite">
       <!-- YouTube Section -->
-      <section class="section active" id="youtube-section" data-section="youtube" role="tabpanel" aria-labelledby="youtube-tab">
+      <section class="section active" id="youtube-section" data-section="youtube" role="tabpanel"
+        aria-labelledby="youtube-tab">
         <div class="section-content">
           <div class="feed-grid" id="youtube-grid" role="feed" aria-label="YouTube video feeds"></div>
         </div>
       </section>
 
       <!-- Blogs Section -->
-      <section class="section" id="blogs-section" data-section="blogs" role="tabpanel" aria-labelledby="blogs-tab" aria-hidden="true">
+      <section class="section" id="blogs-section" data-section="blogs" role="tabpanel" aria-labelledby="blogs-tab"
+        aria-hidden="true">
         <div class="section-content">
           <div class="feed-grid" id="blogs-grid" role="feed" aria-label="Blog feeds"></div>
         </div>
       </section>
 
       <!-- Security Section -->
-      <section class="section" id="security-section" data-section="security" role="tabpanel" aria-labelledby="security-tab" aria-hidden="true">
+      <section class="section" id="security-section" data-section="security" role="tabpanel"
+        aria-labelledby="security-tab" aria-hidden="true">
         <div class="section-content">
           <div class="feed-grid" id="security-grid" role="feed" aria-label="Security news feeds"></div>
         </div>
       </section>
 
       <!-- Subreddits Section -->
-      <section class="section" id="subreddits-section" data-section="subreddits" role="tabpanel" aria-labelledby="subreddits-tab" aria-hidden="true">
+      <section class="section" id="subreddits-section" data-section="subreddits" role="tabpanel"
+        aria-labelledby="subreddits-tab" aria-hidden="true">
         <div class="section-content">
           <div class="feed-grid" id="subreddits-grid" role="feed" aria-label="Subreddit feeds"></div>
         </div>
       </section>
 
       <!-- Twitch Section -->
-      <section class="section" id="twitch-section" data-section="twitch" role="tabpanel" aria-labelledby="twitch-tab" aria-hidden="true">
+      <section class="section" id="twitch-section" data-section="twitch" role="tabpanel" aria-labelledby="twitch-tab"
+        aria-hidden="true">
         <div class="section-content">
           <div class="feed-grid" id="twitch-grid" role="feed" aria-label="Twitch channel feeds"></div>
         </div>
@@ -125,7 +134,8 @@
 
   <!-- Offline Feeds Section -->
   <section class="offline-section" id="offline-section" style="display: none;" aria-label="Offline feeds">
-    <div class="offline-header" onclick="toggleOfflineSection()" role="button" tabindex="0" aria-expanded="false" aria-controls="offline-content" onkeypress="if(event.key==='Enter'||event.key===' ')toggleOfflineSection()">
+    <div class="offline-header" onclick="toggleOfflineSection()" role="button" tabindex="0" aria-expanded="false"
+      aria-controls="offline-content" onkeypress="if(event.key==='Enter'||event.key===' ')toggleOfflineSection()">
       <h2>⚠️ Offline Feeds (<span id="offline-count" aria-live="polite">0</span>)</h2>
       <span class="collapse-indicator" aria-hidden="true">▼</span>
     </div>
@@ -158,4 +168,5 @@
   <script src="/feeds.js"></script>
   <script src="/app.js"></script>
 </body>
+
 </html>
