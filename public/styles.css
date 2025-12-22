@@ -1166,40 +1166,107 @@ body.modal-open {
   }
 }
 
-/* Timeline View Styles */
+/* Timeline View Styles - Day Grouped */
 .timeline-container {
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-}
-
-.timeline-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 24px;
 }
 
-.timeline-item {
+/* Day Group Container */
+.timeline-day-group {
   background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Day Header */
+.timeline-day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.timeline-day-label {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.timeline-day-count {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* Day group recency colors */
+.timeline-day-group.recency-today .timeline-day-label {
+  color: var(--recency-today);
+}
+
+.timeline-day-group.recency-week .timeline-day-label {
+  color: var(--recency-week);
+}
+
+.timeline-day-group.recency-month .timeline-day-label {
+  color: var(--recency-month);
+}
+
+/* Horizontal scrollable articles row */
+.timeline-day-articles {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar but keep functionality */
+.timeline-day-articles::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timeline-day-articles::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.timeline-day-articles::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.timeline-day-articles::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Timeline Item (Compact Card) */
+.timeline-item {
+  flex: 0 0 280px;
+  max-width: 280px;
+  background: var(--bg-primary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition-fast);
-  width: 100%;
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
+  scroll-snap-align: start;
 }
 
 .timeline-item:hover {
   box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
 }
 
 .timeline-item-link {
   display: flex;
-  gap: 14px;
-  padding: 16px;
+  flex-direction: column;
+  height: 100%;
   text-decoration: none;
   color: inherit;
   transition: background var(--transition-fast);
@@ -1210,17 +1277,16 @@ body.modal-open {
 }
 
 .timeline-item-thumbnail {
-  width: 140px;
-  height: 80px;
+  width: 100%;
+  height: 140px;
   object-fit: cover;
-  border-radius: 6px;
+  background: var(--bg-secondary);
   flex-shrink: 0;
-  background: var(--bg-primary);
 }
 
 .timeline-item-content {
   flex: 1;
-  min-width: 0;
+  padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 6px;

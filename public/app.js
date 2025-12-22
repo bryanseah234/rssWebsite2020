@@ -767,7 +767,7 @@ function renderSectionView(section) {
 }
 
 /**
- * Render timeline view - chronological list of all articles from last 30 days
+ * Render timeline view - chronological list of all articles from last 30 days, grouped by day
  */
 function renderTimelineView(section, grid) {
   // Get all feeds for this section
@@ -785,31 +785,96 @@ function renderTimelineView(section, grid) {
     return;
   }
 
-  // Render timeline list
+  // Group articles by day
+  const dayGroups = groupArticlesByDay(articles);
+
+  // Render timeline with day groups
   const timelineHTML = `
     <div class="timeline-container">
-      <ul class="timeline-list">
-        ${articles.map(article => {
+      ${dayGroups.map(group => `
+        <div class="timeline-day-group ${group.recencyClass}">
+          <div class="timeline-day-header">
+            <span class="timeline-day-label">${group.label}</span>
+            <span class="timeline-day-count">${group.articles.length} ${group.articles.length === 1 ? 'article' : 'articles'}</span>
+          </div>
+          <div class="timeline-day-articles">
+            ${group.articles.map(article => {
     const recencyClass = getRecencyClass(article.pubDate);
     return `
-            <li class="timeline-item ${recencyClass}">
-              <a href="${escapeHtml(article.link)}" class="timeline-item-link" target="_blank" rel="noopener noreferrer">
-                ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="" class="timeline-item-thumbnail" loading="lazy">` : ''}
-                <div class="timeline-item-content">
-                  <div class="timeline-item-title">${escapeHtml(article.title)}</div>
-                  <div class="timeline-item-source">${escapeHtml(article.sourceName)}</div>
-                  ${article.text ? `<div class="timeline-item-text">${escapeHtml(truncateText(article.text, 120))}</div>` : ''}
-                  <div class="timeline-item-meta">${formatRelativeTime(article.pubDate)}</div>
-                </div>
-              </a>
-            </li>
-          `;
+                <article class="timeline-item ${recencyClass}">
+                  <a href="${escapeHtml(article.link)}" class="timeline-item-link" target="_blank" rel="noopener noreferrer">
+                    ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="" class="timeline-item-thumbnail" loading="lazy">` : ''}
+                    <div class="timeline-item-content">
+                      <div class="timeline-item-title">${escapeHtml(article.title)}</div>
+                      <div class="timeline-item-source">${escapeHtml(article.sourceName)}</div>
+                      ${article.text ? `<div class="timeline-item-text">${escapeHtml(truncateText(article.text))}</div>` : ''}
+                      <div class="timeline-item-meta">${formatRelativeTime(article.pubDate)}</div>
+                    </div>
+                  </a>
+                </article>
+              `;
   }).join('')}
-      </ul>
+          </div>
+        </div>
+      `).join('')}
     </div>
   `;
 
   grid.innerHTML = timelineHTML;
+}
+
+/**
+ * Group articles by publication day
+ */
+function groupArticlesByDay(articles) {
+  const groups = new Map();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  articles.forEach(article => {
+    const articleDate = new Date(article.pubDate);
+    articleDate.setHours(0, 0, 0, 0);
+    const dateKey = articleDate.toISOString().split('T')[0];
+
+    if (!groups.has(dateKey)) {
+      groups.set(dateKey, {
+        date: articleDate,
+        label: formatDayLabel(articleDate, today, yesterday),
+        recencyClass: getRecencyClass(article.pubDate),
+        articles: []
+      });
+    }
+    groups.get(dateKey).articles.push(article);
+  });
+
+  // Convert to array and sort by date (newest first)
+  return Array.from(groups.values()).sort((a, b) => b.date - a.date);
+}
+
+/**
+ * Format day label (Today, Yesterday, weekday, or date)
+ */
+function formatDayLabel(date, today, yesterday) {
+  if (date.getTime() === today.getTime()) {
+    return 'Today';
+  }
+  if (date.getTime() === yesterday.getTime()) {
+    return 'Yesterday';
+  }
+
+  // Check if within this week (last 7 days)
+  const daysAgo = Math.floor((today - date) / (1000 * 60 * 60 * 24));
+  if (daysAgo < 7) {
+    const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return weekdays[date.getDay()];
+  }
+
+  // Format as "Dec 19" for older dates
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[date.getMonth()]} ${date.getDate()}`;
 }
 
 /**
